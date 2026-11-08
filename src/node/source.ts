@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
 import { readFile, realpath } from 'node:fs/promises';
 import { basename, dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Browser, Page } from 'playwright';
 import { parseManifest } from '../core/manifest.ts';
 import type { Manifest, Section } from '../core/types.ts';
+import { sha256 } from './hash.ts';
 import { appRoot } from './paths.ts';
 
 process.env.PLAYWRIGHT_BROWSERS_PATH ??= resolve(appRoot, '.local-browsers');
@@ -16,8 +16,7 @@ export interface SourceOptions {
   exclusions: string[];
   ready: { mode: 'dom' | 'selector' | 'signal'; value: string; timeout: number };
 }
-export const sha256 = (bytes: Uint8Array | string) =>
-  createHash('sha256').update(bytes).digest('hex');
+export { sha256 };
 export function validateOptions(value: unknown): SourceOptions {
   const v = value as SourceOptions;
   if (

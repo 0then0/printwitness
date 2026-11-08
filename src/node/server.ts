@@ -7,6 +7,7 @@ import { compare } from '../core/compare.ts';
 import { parseManifest } from '../core/manifest.ts';
 import type { Report } from '../core/types.ts';
 import { defaultLocale, isLocale } from '../i18n/index.ts';
+import { maxJsonBytes, maxPdfBytes } from './limits.ts';
 import { appRoot } from './paths.ts';
 import { analyzePdf } from './pdf.ts';
 import { reportHtml } from './report.ts';
@@ -140,7 +141,7 @@ export async function startServer(options: ServerOptions = {}) {
           const chunks: Buffer[] = [];
           for await (const chunk of req) {
             size += chunk.length;
-            if (size > 40 * 1024 * 1024)
+            if (size > maxJsonBytes)
               throw new Error('Request exceeds 40 MiB. PDF limit is 25 MiB.');
             chunks.push(chunk);
           }
@@ -173,7 +174,7 @@ export async function startServer(options: ServerOptions = {}) {
             pdf = Buffer.from(data.pdf, 'base64');
             name = typeof data.name === 'string' ? data.name.slice(0, 500) : 'Imported PDF';
           }
-          if (pdf.length > 25 * 1024 * 1024) throw new Error('PDF exceeds 25 MiB.');
+          if (pdf.length > maxPdfBytes) throw new Error('PDF exceeds 25 MiB.');
           const { index, images } = await analyzePdf(pdf);
           const report = compare(manifest, index, { name, sha256: sha256(pdf) });
           const id = randomUUID();

@@ -4,6 +4,10 @@ Notable user-facing changes are recorded here. Release dates use UTC. Published 
 
 ## [Unreleased]
 
+### Added
+
+- `node src/node/cli.ts check` compares a finished PDF with a saved manifest without the web interface, using the same parser, PDF.js analysis, comparator and standalone report. It writes JSON and HTML reports to a new output directory, supports `--json` for pure machine output, and exits with `0` (all found), `1` (mismatch), `2` (manual or unverifiable) or `3` (invalid arguments, input or output). See the [usage guide](docs/usage.md#check-a-finished-pdf-from-the-command-line).
+
 ### Changed
 
 - Added repository editor/Git conventions, community policies, issue forms and a pull request template.

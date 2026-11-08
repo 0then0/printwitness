@@ -55,6 +55,25 @@ English is the default language. Spanish, German, French, Japanese, Brazilian Po
 
 See the [usage guide](docs/usage.md) for selectors, readiness, exclusions and report states, and the [matching reference](docs/matching.md) for the manifest contract and confidence limits.
 
+## Check a finished PDF from the command line
+
+Use `check` in CI after your build has produced the PDF. It compares the PDF with a manifest frozen earlier, without the web interface, an HTTP server, the source HTML, Chromium or network access. From the checkout, install the pinned dependencies once with `npm ci`, then run:
+
+```sh
+node /path/to/PrintWitness/src/node/cli.ts check \
+  --manifest expected.json \
+  --pdf invoice.pdf \
+  --output artifacts/printwitness
+```
+
+It writes `printwitness-report.json` and the standalone `printwitness-report.html` to a new output directory and never overwrites existing reports. `--json` prints only the JSON report to stdout; the summary and diagnostics go to stderr. Exit codes:
+- `0`: all applicable checks were found in the text layer.
+- `1`: confirmed violation (mismatch); it takes priority over incomplete findings in the same report.
+- `2`: manual review needed or the check is incomplete (manual or unverifiable). This is not a pass.
+- `3`: invalid arguments, unreadable input, invalid manifest or failed report output.
+
+Success proves the manifest's text-layer contract, not visible text or correct layout. `check` never creates or updates a manifest. See the [usage guide](docs/usage.md#check-a-finished-pdf-from-the-command-line) for incomplete results, limits and a CI example that keeps the reports when the check fails.
+
 ## Example report
 
 The open [validation template](fixtures/validation.html) contains a long table with 96 records, repeated headings and mandatory text, Unicode content, a link and an asynchronous readiness signal. It has no external assets and is covered by this repository's Apache-2.0 license.

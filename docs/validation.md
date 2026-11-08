@@ -58,6 +58,10 @@ The optional [WeasyPrint #2469 case study](case-studies/weasyprint-2469.md) incl
 
 Lab artifact-integrity tests run with `npm test` without Docker or external downloads. They check valid PDF/report identities, changed PDF bytes, mismatched manifests and rejection of swapped PDFs by both verification and packaging before existing outputs can be overwritten.
 
+## Command-line check
+
+`tests/cli.test.ts` runs the real `src/node/cli.ts` entry point in subprocesses from a different working directory, using the synthetic PDFs and hand-written manifests. It asserts the exit codes (found, mismatch with manual in the same report, manual, textless and corrupt PDFs, usage and input errors, oversized files), JSON-only stdout, JSON/HTML artifacts from one run, unchanged inputs, refusal to overwrite existing reports, rollback after a failed write and SIGTERM during analysis. `tests/support/cli-fault.ts` is preloaded into those subprocesses to inject a missing PDF.js resource, a hung resource read and a failed HTML write without any hook in the product code. The CLI report is also compared, without its creation time, with direct `compare` output and with the local server's `/api/check` result.
+
 ## External PDF resources
 
 `node --test tests/pdf.test.ts tests/i18n.test.ts` checks the local [synthetic PDF fixtures](../fixtures/pdf/README.md): predefined-CMap Unicode extraction and frozen-manifest comparison, plain text, textless and corrupt controls, plus unavailable resources in a disposable copy. Both PDF.js's silent empty-text recovery and the application's explicit incomplete-processing diagnosis are asserted. Tests also cover diagnostic translation and standalone report presentation in all seven languages.
