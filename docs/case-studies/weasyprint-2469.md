@@ -190,6 +190,12 @@ without overwriting checksums or a previous export. These guards have regression
 in `npm test`, including both command entry points; they do not change product
 matching behavior.
 
+## Public command re-check
+
+On November 8, 2026 the lab PDFs were regenerated from the same pinned revisions, because the earlier outputs were not stored. The earlier frozen manifest was therefore not available either; the lab's `freeze` step created a new one from the same source and selector (SHA-256 `9c41ab92969f782c583094b82ff56c05b6c529e7edf7be8a6a390eb23e8c3b72`, which differs from the hash recorded above). That one manifest was used for both PDFs.
+
+`node src/node/cli.ts check` was run from outside the checkout. The parent PDF exits `2` with three **manual** findings and the same boundary reason as above; the fixed PDF exits `0` with three **found** findings. Their reports are semantically identical to the lab's `check.ts compare` output, apart from the creation time. This confirms that the public command applies the same contract. It is not a new external case, a confirmed automatic mismatch or evidence of adoption.
+
 ## Licenses and scope
 
 The [lab notice](../../scripts/labs/weasyprint-2469/NOTICE.md) records attribution

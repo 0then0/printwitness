@@ -21,7 +21,7 @@ Biome checks source, configuration and styles. Generated artifacts, dependencies
 ## Code layout
 
 - `src/core/`: portable types, manifest validation, normalization and deterministic matching.
-- `src/node/`: source capture and printing, PDF.js extraction/rendering, report export and the local HTTP server.
+- `src/node/`: source capture and printing, PDF.js extraction/rendering, report export, the local HTTP server and the `check` command (`cli.ts`). `cli.ts` must stay free of Playwright and source-capture imports.
 - `src/ui/`: React document, checklist and finding-detail interface.
 - `src/i18n/`: typed catalogs and presentation-only diagnostic translation.
 - `fixtures/`, `tests/`, `scripts/`: the open acceptance template and reproducible validation.
