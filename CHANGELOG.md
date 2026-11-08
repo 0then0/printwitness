@@ -10,6 +10,7 @@ Notable user-facing changes are recorded here. Release dates use UTC. Published 
 
 ### Changed
 
+- Redrew the project icon on a consistent grid: matching source and PDF pages, one clean fold, a single marked missing line and lighter strokes that stay legible at small sizes. In dark mode the missing line now stays red instead of turning cyan.
 - Added repository editor/Git conventions, community policies, issue forms and a pull request template.
 - Refined CI permissions, action pinning, concurrency, artifact scope and desktop build triggers.
 

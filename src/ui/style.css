@@ -43,11 +43,11 @@
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --icon-filter: invert(0.85);
+  --icon-filter: invert(0.85) hue-rotate(180deg);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --icon-filter: invert(0.85);
+    --icon-filter: invert(0.85) hue-rotate(180deg);
   }
 }
 * {
