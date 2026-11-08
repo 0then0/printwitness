@@ -8,6 +8,7 @@ import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { appRoot } from '../src/node/paths.ts';
 import { app, metadata, output, run, target } from './desktop/common.ts';
+import { detachDmg } from './desktop/dmg.ts';
 import { fixtureServer } from './fixture-server.ts';
 
 // UI automation also uses the packaged engine, not a developer's browser cache.
@@ -307,7 +308,7 @@ try {
       join(bundles, `${stem}.dmg`),
     ]);
     installed = join(mount, 'PrintWitness.app/Contents/Resources/app');
-    detach = () => run('/usr/bin/hdiutil', ['detach', mount]);
+    detach = () => detachDmg(mount);
   } else if (process.platform === 'win32') {
     installed = join(testRoot, 'installed');
     // NSIS consumes the entire unquoted tail after /D= or _?=, including spaces.

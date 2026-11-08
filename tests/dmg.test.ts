@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { createDmg } from '../scripts/desktop/dmg.ts';
+import { createDmg, detachDmg } from '../scripts/desktop/dmg.ts';
 
 const busy = () =>
   Object.assign(new Error('hdiutil exited with 1'), {
@@ -78,3 +78,60 @@ for (const [name, error, expectedAttempts] of [
     await assert.rejects(stat(join(root, 'output.dmg')), { code: 'ENOENT' });
   });
 }
+
+test('DMG detach retries Resource busy and then forces the unmount', async () => {
+  const calls: string[][] = [];
+  const delays: number[] = [];
+  await detachDmg(
+    '/mount',
+    async (args) => {
+      calls.push(args);
+      if (!args.includes('-force'))
+        throw Object.assign(new Error('exit 16'), {
+          stderr: 'hdiutil: couldn\'t unmount "disk3" - Resource busy\n',
+        });
+    },
+    async (ms) => {
+      delays.push(ms);
+    },
+  );
+  assert.deepEqual(calls, [
+    ['detach', '/mount'],
+    ['detach', '/mount'],
+    ['detach', '/mount'],
+    ['detach', '-force', '/mount'],
+  ]);
+  assert.deepEqual(delays, [1000, 2000, 3000]);
+});
+
+test('DMG detach succeeds after a transient busy volume without forcing', async () => {
+  let attempts = 0;
+  await detachDmg(
+    '/mount',
+    async (args) => {
+      assert(!args.includes('-force'));
+      if (++attempts < 2) throw Object.assign(new Error('exit 16'), { stderr: 'Resource busy' });
+    },
+    async () => {},
+  );
+  assert.equal(attempts, 2);
+});
+
+test('DMG detach does not retry other failures', async () => {
+  const error = Object.assign(new Error('exit 1'), {
+    stderr: 'hdiutil: detach failed - No such file',
+  });
+  let attempts = 0;
+  await assert.rejects(
+    detachDmg(
+      '/mount',
+      async () => {
+        attempts++;
+        throw error;
+      },
+      async () => {},
+    ),
+    (actual) => actual === error,
+  );
+  assert.equal(attempts, 1);
+});
