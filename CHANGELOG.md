@@ -4,6 +4,8 @@ Notable user-facing changes are recorded here. Release dates use UTC. Published 
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-21
+
 ### Added
 
 - Check same-document links from an HTML table of contents to PDF headings, including destinations on the same page. The interface and CLI reports show the expected heading, observed page and position, and reason for the verdict. Existing manifests remain readable.
@@ -58,7 +60,9 @@ Notable user-facing changes are recorded here. Release dates use UTC. Published 
 - Seven interface languages and system, light and dark themes.
 - Standalone macOS arm64/x64, Windows x64 and Ubuntu 24.04 x64 packages with bundled Node.js and Chromium, native launchers and installer smoke tests.
 
-[Unreleased]: https://github.com/0then0/PrintWitness/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/0then0/PrintWitness/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/0then0/PrintWitness/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/0then0/PrintWitness/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/0then0/PrintWitness/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/0then0/PrintWitness/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/0then0/PrintWitness/releases/tag/v0.1.0
