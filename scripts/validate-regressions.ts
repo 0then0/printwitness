@@ -100,7 +100,56 @@ export async function validateRegressions() {
       (f) => f.status === 'manual',
     ),
   );
+  const contents = {
+    ...options,
+    source: resolve('fixtures/internal-links.html'),
+    selectors: ['#contents'],
+  };
+  const toc = await capture(contents);
+  assert.equal(toc.sections[0].endContextNext, 'Delivery takes five days.');
+  const tocPdf = await printSource(contents);
+  const actual = (await analyzePdf(tocPdf)).index;
+  const tocReport = compare(toc, actual, { name: 'internal-links.pdf', sha256: sha256(tocPdf) });
+  assert.equal(tocReport.status, 'found', JSON.stringify(tocReport.findings));
+  await writeFile('artifacts/validation/internal-links-manifest.json', JSON.stringify(toc));
+  await writeFile('artifacts/validation/internal-links.pdf', tocPdf);
+
+  await writeFile(
+    options.source,
+    document(`
+    <nav id="required"><h2>Fragment cases</h2>
+      <p><a href="#missing">Missing destination</a></p>
+      <p><a href="#same">Duplicate ID</a></p>
+      <p><a href="#empty">Empty heading</a></p>
+      <p><a href="#paragraph">Wrong element</a></p>
+      <p><a href="#repeated">Repeated heading</a></p>
+      <p><a href="#repeated-in-body">Repeated in body</a></p>
+      <p><a href="#caf%C3%A9">Encoded destination</a></p>
+    </nav>
+    <h2 id="same">Shipping terms</h2><p id="same">Duplicate ID here</p>
+    <h2 id="empty"><img alt="Decoration"></h2>
+    <p id="paragraph">Body paragraph</p>
+    <h2 id="repeated">Return terms</h2><h3>Return terms</h3>
+    <h2 id="repeated-in-body">Service terms</h2><p>Service terms</p>
+    <h2 id="café">Coffee terms</h2>`),
+  );
+  const fragments = (await capture(options)).sections[0].expectations.flatMap((e) =>
+    e.internalTarget ? [e.internalTarget] : [],
+  );
+  assert.deepEqual(
+    fragments.map((target) => [target.fragment, target.issue]),
+    [
+      ['missing', 'missing-fragment'],
+      ['same', 'duplicate-id'],
+      ['empty', 'heading-text-unavailable'],
+      ['paragraph', 'not-heading'],
+      ['repeated', 'ambiguous-heading-text'],
+      ['repeated-in-body', 'ambiguous-heading-text'],
+      ['café', undefined],
+    ],
+  );
+  assert.equal(fragments.at(-1)?.heading, 'Coffee terms');
   console.log(
-    'Regressions: DOM section edges, inline whitespace, contextual exclusions, Japanese wraps, cell partitions and merged link labels passed.',
+    'Regressions: DOM section edges, inline whitespace, contextual exclusions, Japanese wraps, cell partitions, merged link labels and internal link capture passed.',
   );
 }

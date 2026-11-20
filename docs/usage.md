@@ -38,7 +38,7 @@ Download the manifest to reuse it independently of the source. Importing a manif
 Select a check to see its expected text, explanation, URL details and available evidence. Evidence highlights extraction-item coordinates, which can cover more than the precise matching characters. Navigate pages independently of the selection. Use the status filter and search to inspect losses or uncertain results.
 
 The four result states are:
-- **Found in text layer:** an independent occurrence exists in established section context. Links additionally need a uniquely associated matching URL annotation. Visual integrity is unproven.
+- **Found in text layer:** an independent occurrence exists in established section context. A link also needs a uniquely associated annotation that matches its URL or identifies the expected internal heading. Visual integrity is unproven.
 - **Mismatch:** required content is absent in established context, an independent repetition is missing, or a uniquely associated URL differs.
 - **Manual review:** section context, cell geometry, reading order or link association is ambiguous. Missing text in a PDF with an empty-text page also requires inspection.
 - **Unverifiable:** no usable text layer, unreadable or unsupported PDF, or no active expectations.

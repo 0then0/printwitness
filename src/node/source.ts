@@ -191,9 +191,57 @@ export async function capture(options: SourceOptions): Promise<Manifest> {
       };
       const content = (e: Element) => clean(rawContent(e));
       for (const s of [...selectors, ...exclusions]) document.querySelectorAll(s);
-      const headings = [...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].filter(
+      const headingSelector = 'h1,h2,h3,h4,h5,h6';
+      const headings = [...document.querySelectorAll(headingSelector)].filter(
         (h) => !excluded(h) && content(h),
       );
+      const headingCounts = new Map<string, number>();
+      for (const h of headings) {
+        const text = content(h);
+        if (text.length <= 100_000) headingCounts.set(text, (headingCounts.get(text) ?? 0) + 1);
+      }
+      const fragments = new Map<string, Element | null>();
+      for (const el of document.querySelectorAll('[id]'))
+        fragments.set(el.id, fragments.has(el.id) ? null : el);
+      // Keep direct text, inline whitespace and explicit line breaks within their blocks.
+      const textBlocks = (root: Element, selectors: string, ignored: string) => {
+        const blocks = new Map<Element, string[]>();
+        const walker = document.createTreeWalker(
+          root,
+          NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
+        );
+        while (walker.nextNode()) {
+          const node = walker.currentNode;
+          if (node.nodeType === Node.ELEMENT_NODE && !(node instanceof HTMLBRElement)) continue;
+          const parent = node.parentElement;
+          if (!parent || excluded(parent) || parent.closest(ignored)) continue;
+          const nearest = parent.closest(selectors);
+          const block = nearest && root.contains(nearest) ? nearest : parent;
+          const parts = blocks.get(block) ?? [];
+          parts.push(node instanceof HTMLBRElement ? ' ' : (node.textContent ?? ''));
+          blocks.set(block, parts);
+        }
+        return blocks;
+      };
+      let headingTextBlocks: Map<string, Element[]> | undefined;
+      const findHeadingTextBlocks = () => {
+        if (headingTextBlocks) return headingTextBlocks;
+        headingTextBlocks = new Map();
+        const blocks = textBlocks(
+          document.body,
+          `${headingSelector},p,li,div,section,article,nav,header,footer,dt,dd,blockquote,pre,figcaption,td,th`,
+          'script,style,template,noscript',
+        );
+        for (const [block, parts] of blocks) {
+          const text = clean(parts.join(''));
+          if (!headingCounts.has(text)) continue;
+          const matches = headingTextBlocks.get(text) ?? [];
+          matches.push(block);
+          headingTextBlocks.set(text, matches);
+        }
+        return headingTextBlocks;
+      };
+      let hasInternalLinks = false;
       const selected = selectors.flatMap((s) => {
         const els = [...document.querySelectorAll(s)];
         if (!els.length) throw new Error(`Selector matches no elements: ${s}`);
@@ -206,7 +254,7 @@ export async function capture(options: SourceOptions): Promise<Manifest> {
         )
       )
         throw new Error('Selected elements overlap. Choose disjoint sections or tables.');
-      return selected.map(({ selector, el }, si): Section => {
+      const sections = selected.map(({ selector, el }, si): Section => {
         if (excluded(el)) throw new Error(`Selected element is excluded: ${selector}`);
         const heading =
           headings.find((h) => h === el || el.contains(h)) ??
@@ -247,24 +295,11 @@ export async function capture(options: SourceOptions): Promise<Manifest> {
         const add = (e: Omit<Section['expectations'][number], 'id'>) => {
           if (e.text) expectations.push({ id: `s${si + 1}-e${++serial}`, ...e });
         };
-        // Walk text nodes into semantic blocks, preserving direct text and repeated paragraphs.
-        const walker = document.createTreeWalker(
+        const blocks = textBlocks(
           el,
-          NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
+          `${headingSelector},p,li,dt,dd,blockquote,pre,figcaption`,
+          'table,script,style,template,noscript',
         );
-        const blocks = new Map<Element, string[]>();
-        while (walker.nextNode()) {
-          const node = walker.currentNode;
-          if (node.nodeType === Node.ELEMENT_NODE && !(node instanceof HTMLBRElement)) continue;
-          const parent = node.parentElement;
-          if (!parent || excluded(parent) || parent.closest('table,script,style,template,noscript'))
-            continue;
-          let block = parent.closest('p,li,h1,h2,h3,h4,h5,h6,dt,dd,blockquote,pre,figcaption');
-          if (!block || !el.contains(block)) block = parent;
-          const parts = blocks.get(block) ?? [];
-          parts.push(node instanceof HTMLBRElement ? ' ' : (node.textContent ?? ''));
-          blocks.set(block, parts);
-        }
         for (const parts of blocks.values()) add({ kind: 'text', text: clean(parts.join('')) });
         const tables = el.matches('table') ? [el] : [...el.querySelectorAll('table')];
         const headers: string[] = [];
@@ -290,6 +325,61 @@ export async function capture(options: SourceOptions): Promise<Manifest> {
         for (const a of [...el.querySelectorAll<HTMLAnchorElement>('a[href]')])
           if (!excluded(a) && content(a)) {
             const raw = a.getAttribute('href') ?? '';
+            const fragmentHref = raw.trim();
+            if (
+              fragmentHref.startsWith('#') &&
+              a.href.split('#', 1)[0] === location.href.split('#', 1)[0]
+            ) {
+              hasInternalLinks = true;
+              let fragment = a.hash.slice(1);
+              try {
+                fragment = decodeURIComponent(fragment);
+              } catch {
+                // A literal percent sign can occur in an HTML id.
+              }
+              const target = fragment ? fragments.get(fragment) : undefined;
+              const targetHeading =
+                target instanceof HTMLElement && target.matches(headingSelector)
+                  ? content(target)
+                  : undefined;
+              const matchable = !!targetHeading && targetHeading.length <= 100_000;
+              const repeated =
+                matchable &&
+                ((headingCounts.get(targetHeading) ?? 0) > 1 ||
+                  findHeadingTextBlocks()
+                    .get(targetHeading)
+                    ?.some(
+                      (block) =>
+                        target &&
+                        !target.contains(block) &&
+                        !block.contains(target) &&
+                        !block.contains(a),
+                    ));
+              const issue =
+                target === null
+                  ? 'duplicate-id'
+                  : !target
+                    ? 'missing-fragment'
+                    : targetHeading === undefined
+                      ? 'not-heading'
+                      : !matchable
+                        ? 'heading-text-unavailable'
+                        : repeated
+                          ? 'ambiguous-heading-text'
+                          : undefined;
+              add({
+                kind: 'link',
+                text: content(a),
+                href: fragmentHref,
+                internalTarget: {
+                  fragment,
+                  heading: matchable ? targetHeading : undefined,
+                  issue,
+                  labelInHeading: matchable && a.closest(headingSelector) ? true : undefined,
+                },
+              });
+              continue;
+            }
             // Synthetic file origin is not a portable destination; keep relative file links explicit.
             const href =
               location.hostname === 'printwitness-source.invalid' &&
@@ -302,6 +392,8 @@ export async function capture(options: SourceOptions): Promise<Manifest> {
         // The next heading alone is too broad: unselected text can precede it.
         const following = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
         let endContext: string | null = null;
+        let endContextNext: string | null | undefined;
+        let endBlock: Node | undefined;
         let startContext: string | null = null;
         while (following.nextNode()) {
           const node = following.currentNode;
@@ -324,13 +416,23 @@ export async function capture(options: SourceOptions): Promise<Manifest> {
           }
           if (!(el.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING)) continue;
           const block = parent.closest('p,li,h1,h2,h3,h4,h5,h6,dt,dd,blockquote,pre,figcaption,tr');
-          endContext =
-            block && !block.contains(el) ? content(block) : clean(node.textContent ?? '');
-          break;
+          const contextBlock = block && !block.contains(el) ? block : node;
+          const context =
+            contextBlock instanceof Element ? content(contextBlock) : clean(node.textContent ?? '');
+          if (endBlock) {
+            if (endBlock.contains(node)) continue;
+            endContextNext = context;
+            break;
+          }
+          endContext = context;
+          if (!expectations.some((e) => e.internalTarget && e.text === endContext)) break;
+          endBlock = contextBlock;
+          endContextNext = null;
         }
         return {
           id: `s${si + 1}`,
           endContext,
+          endContextNext,
           startContext,
           anchorInside: el.contains(heading),
           selector,
@@ -342,6 +444,7 @@ export async function capture(options: SourceOptions): Promise<Manifest> {
           expectations,
         };
       });
+      return { sections, headingTexts: hasInternalLinks ? [...headingCounts.keys()] : undefined };
     }, options);
     const digest = sha256(await page.content());
     return parseManifest({
@@ -353,7 +456,7 @@ export async function capture(options: SourceOptions): Promise<Manifest> {
         readiness: `${options.ready.mode}:${options.ready.value}; timeout=${options.ready.timeout}ms`,
       },
       exclusions: options.exclusions,
-      sections: snapshot,
+      ...snapshot,
     });
   } finally {
     await browser.close();

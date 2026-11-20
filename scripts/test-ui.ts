@@ -143,6 +143,28 @@ try {
   );
   await testLocales(page, browser, base);
   await testThemes(page, browser, base);
+  await page.getByRole('button', { name: 'Source & manifest' }).click();
+  await page
+    .getByText('Import manifest', { exact: true })
+    .locator('input')
+    .setInputFiles(resolve('artifacts/validation/internal-links-manifest.json'));
+  await page.getByRole('heading', { name: 'Expectations saved' }).waitFor();
+  await page
+    .getByText('Check PDF', { exact: true })
+    .locator('input')
+    .setInputFiles(resolve('artifacts/validation/internal-links.pdf'));
+  await page.getByTestId('report-status').waitFor();
+  assert.equal(await page.getByTestId('report-status').textContent(), 'Found in text layer');
+  await page
+    .locator('.check')
+    .filter({ hasText: 'Appendix A: Delivery terms' })
+    .filter({ has: page.getByText('Link', { exact: true }) })
+    .click();
+  const detail = page.locator('.detail-content');
+  assert.equal(await detail.getByRole('heading', { name: 'Expected heading' }).count(), 1);
+  assert.equal(await detail.getByRole('heading', { name: 'Destination in PDF' }).count(), 1);
+  assert.match((await detail.textContent()) ?? '', /p\. 1 · y [\d.]+ pt/);
+  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   // Manifest import works independently of the original source path.
   await page.getByRole('button', { name: 'Source & manifest' }).click();
   await page

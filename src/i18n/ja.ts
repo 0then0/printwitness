@@ -93,6 +93,9 @@ export const messages: Messages = {
   expectedContent: '期待する内容',
   expectedUrl: '期待するURL',
   actualUrl: 'PDF内のURL',
+  expectedHeading: '期待する見出し',
+  actualDestination: 'PDF内のリンク先',
+  destinationY: 'y {y} pt',
   reason: '判定理由',
   foundOnPages: '見つかったページ',
   intentionalExclusion: '意図的な除外',
@@ -131,10 +134,26 @@ export const messages: Messages = {
   reasonWrappedRow:
     '行のテキストは一致しますが、複数の行やページにまたがっています。セルと行の対応を目視で確認してください。',
   reasonChangedUrl: 'このラベルのPDFリンク注釈が別のリンク先を示しています。',
-  reasonLinkManual:
-    'ラベルはありますが、一意のURL注釈を対応付けられません。v0.1はPDF内の内部リンク先を解決しません。',
+  reasonLinkManual: 'ラベルはありますが、一意のURL注釈を対応付けられません。',
   reasonLinkFound:
     'このセクション内でラベルとURL注釈を確認しました。実際の表示は引き続き目視確認が必要です。',
+  reasonFragmentMissing: 'フラグメントに対応するIDを持つ要素が元のHTMLにありません。',
+  reasonFragmentDuplicate: 'フラグメントと同じIDを持つ要素が元のHTMLに複数あります。',
+  reasonFragmentNotHeading: 'フラグメントが指す要素はHTMLの見出しではありません。',
+  reasonSourceHeadingText: '元の見出しには照合に使えるテキストがありません。',
+  reasonSourceHeadingRepeated: '期待する見出しと同じテキストが元の文書の別の場所にもあります。',
+  reasonInternalLabel: '内部リンクのラベルの位置を一意に特定できません。',
+  reasonInternalAnnotationMissing:
+    '一意に特定した内部リンクのラベルを覆うPDFリンク注釈がありません。',
+  reasonInternalAnnotationManual:
+    '内部リンクのラベルに対応するPDFリンク注釈を一意に特定できません。',
+  reasonInternalUnresolved: 'リンク注釈からPDF内のリンク先を解決できません。',
+  reasonPdfHeadingManual: 'PDFのテキスト層で期待する見出しを一意に特定できません。',
+  reasonInternalWrongPage: '内部リンクは期待する見出しとは異なるページを指しています。',
+  reasonInternalPageOnly: '期待するページ上で使える縦方向の座標がリンク先にありません。',
+  reasonInternalPosition: '縦方向の座標から見出しを一意に特定できません。',
+  reasonInternalFound: '内部リンクは期待する見出しを指しています。',
+  reasonInternalWrongHeading: '内部リンクは同じページの別の見出しを指しています。',
   reasonFound:
     'このセクションのテキスト層で独立した出現を確認しました。実際の表示を保証するものではありません。',
   warningVisibility:

@@ -4,6 +4,7 @@ import type { Finding, Manifest, Report, Status } from '../core/types.ts';
 import type { MessageKey } from '../i18n/en.ts';
 import {
   defaultLocale,
+  destinationLabel,
   diagnostic,
   isLocale,
   kindLabel,
@@ -173,7 +174,7 @@ function App() {
     (f) =>
       (filter === 'all' ||
         (filter === 'issues' ? !f.excluded && f.status !== 'found' : f.status === filter)) &&
-      `${f.expected} ${f.section} ${f.href ?? ''}`
+      `${f.expected} ${f.section} ${f.href ?? ''} ${f.internalTarget?.heading ?? ''}`
         .toLocaleLowerCase()
         .includes(search.toLocaleLowerCase()),
   );
@@ -607,17 +608,33 @@ function App() {
               </p>
               <h4>{t('expectedContent')}</h4>
               <blockquote>{current.expected}</blockquote>
-              {current.href && (
+              {current.internalTarget ? (
                 <>
-                  <h4>{t('expectedUrl')}</h4>
+                  <h4>{t('expectedHeading')}</h4>
+                  <p>{current.internalTarget.heading ?? t('unresolved')}</p>
                   <code>{current.href}</code>
-                  {current.actualHref && (
+                  {report && (
                     <>
-                      <h4>{t('actualUrl')}</h4>
-                      <code>{current.actualHref}</code>
+                      <h4>{t('actualDestination')}</h4>
+                      <p>
+                        {destinationLabel(locale, current.actualDestination, current.actualHref)}
+                      </p>
                     </>
                   )}
                 </>
+              ) : (
+                current.href && (
+                  <>
+                    <h4>{t('expectedUrl')}</h4>
+                    <code>{current.href}</code>
+                    {current.actualHref && (
+                      <>
+                        <h4>{t('actualUrl')}</h4>
+                        <code>{current.actualHref}</code>
+                      </>
+                    )}
+                  </>
+                )
               )}
               <h4>{t('reason')}</h4>
               <p>{report ? diagnostic(locale, current.reason) : t('pendingReason')}</p>

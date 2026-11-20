@@ -96,6 +96,9 @@ export const messages: Messages = {
   expectedContent: 'Contenu attendu',
   expectedUrl: 'URL attendue',
   actualUrl: 'URL dans le PDF',
+  expectedHeading: 'Titre attendu',
+  actualDestination: 'Destination dans le PDF',
+  destinationY: 'y {y} pt',
   reason: 'Motif',
   foundOnPages: 'Trouvé aux pages',
   intentionalExclusion: 'Exclusion volontaire',
@@ -136,9 +139,31 @@ export const messages: Messages = {
     'Le texte correspond, mais s’étend sur plusieurs lignes ou pages. Confirmez visuellement l’association des cellules.',
   reasonChangedUrl: 'L’annotation de lien PDF à cet endroit pointe vers une autre destination.',
   reasonLinkManual:
-    'Le libellé est présent, mais aucune annotation URL unique ne peut lui être associée. v0.1 ne résout pas les destinations internes du PDF.',
+    'Le libellé est présent, mais aucune annotation URL unique ne peut lui être associée.',
   reasonLinkFound:
     'Libellé et annotation URL trouvés dans cette section. La visibilité reste à vérifier visuellement.',
+  reasonFragmentMissing: 'Aucun élément source ne porte l’identifiant du fragment.',
+  reasonFragmentDuplicate: 'Plusieurs éléments sources portent l’identifiant du fragment.',
+  reasonFragmentNotHeading: 'Le fragment pointe vers un élément qui n’est pas un titre HTML.',
+  reasonSourceHeadingText:
+    'Le titre source ne contient aucun texte utilisable pour la comparaison.',
+  reasonSourceHeadingRepeated:
+    'Le texte du titre attendu apparaît aussi ailleurs dans le document source.',
+  reasonInternalLabel: 'Impossible de localiser sans ambiguïté le libellé du lien interne.',
+  reasonInternalAnnotationMissing:
+    'Aucune annotation PDF ne couvre le libellé localisé du lien interne.',
+  reasonInternalAnnotationManual:
+    'Impossible d’associer une annotation PDF unique au libellé du lien interne.',
+  reasonInternalUnresolved:
+    'L’annotation du lien n’a pas de destination interne résoluble dans le PDF.',
+  reasonPdfHeadingManual:
+    'Impossible de localiser sans ambiguïté le titre attendu dans la couche de texte du PDF.',
+  reasonInternalWrongPage: 'Le lien interne mène à une autre page que celle du titre attendu.',
+  reasonInternalPageOnly:
+    'La destination interne ne fournit aucune position verticale exploitable sur la page attendue.',
+  reasonInternalPosition: 'La position verticale ne permet pas d’identifier un titre unique.',
+  reasonInternalFound: 'La destination du lien interne correspond au titre attendu.',
+  reasonInternalWrongHeading: 'Le lien interne mène à un autre titre de la même page.',
   reasonFound:
     'Une occurrence indépendante est présente dans la couche de texte de cette section. Cela ne prouve pas sa visibilité.',
   warningVisibility:

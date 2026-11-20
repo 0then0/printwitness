@@ -4,6 +4,10 @@ Notable user-facing changes are recorded here. Release dates use UTC. Published 
 
 ## [Unreleased]
 
+### Added
+
+- Check same-document links from an HTML table of contents to PDF headings, including destinations on the same page. The interface and CLI reports show the expected heading, observed page and position, and reason for the verdict. Existing manifests remain readable.
+
 ## [0.2.0] - 2026-11-08
 
 ### Added

@@ -93,6 +93,9 @@ export const en = {
   expectedContent: 'Expected content',
   expectedUrl: 'Expected URL',
   actualUrl: 'URL in PDF',
+  expectedHeading: 'Expected heading',
+  actualDestination: 'Destination in PDF',
+  destinationY: 'y {y} pt',
   reason: 'Reason',
   foundOnPages: 'Found on pages',
   intentionalExclusion: 'Intentional exclusion',
@@ -132,10 +135,29 @@ export const en = {
   reasonWrappedRow:
     'Row text matches, but spans multiple lines or pages. Confirm cell-to-row geometry visually.',
   reasonChangedUrl: 'The PDF link annotation at this label has a different destination.',
-  reasonLinkManual:
-    'The label is present, but no unique URL annotation can be associated with it. v0.1 does not resolve internal PDF destinations.',
+  reasonLinkManual: 'The label is present, but no unique URL annotation can be associated with it.',
   reasonLinkFound:
     'Label and URL annotation found in this section. Visibility still requires visual inspection.',
+  reasonFragmentMissing: 'The source fragment has no matching element ID.',
+  reasonFragmentDuplicate: 'The source fragment matches more than one element ID.',
+  reasonFragmentNotHeading: 'The source fragment targets an element other than an HTML heading.',
+  reasonSourceHeadingText: 'The source heading has no usable text for matching.',
+  reasonSourceHeadingRepeated: 'The expected heading text also occurs elsewhere in the source.',
+  reasonInternalLabel: 'The internal link label cannot be located unambiguously.',
+  reasonInternalAnnotationMissing:
+    'No PDF link annotation covers the uniquely located internal link label.',
+  reasonInternalAnnotationManual:
+    'A unique PDF link annotation could not be associated with the internal link label.',
+  reasonInternalUnresolved: 'The link annotation has no resolvable internal PDF destination.',
+  reasonPdfHeadingManual:
+    'The expected heading could not be uniquely located in the PDF text layer.',
+  reasonInternalWrongPage:
+    'The internal link points to a different page from the expected heading.',
+  reasonInternalPageOnly:
+    'The internal destination gives no usable vertical position on the expected page.',
+  reasonInternalPosition: 'The vertical destination could not be associated with a unique heading.',
+  reasonInternalFound: 'The internal link destination aligns with the expected heading.',
+  reasonInternalWrongHeading: 'The internal link points to a different heading on the same page.',
   reasonFound:
     'An independent occurrence is present in this section’s text layer. This does not prove visibility.',
   warningVisibility:

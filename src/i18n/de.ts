@@ -95,6 +95,9 @@ export const messages: Messages = {
   expectedContent: 'Erwarteter Inhalt',
   expectedUrl: 'Erwartete URL',
   actualUrl: 'URL im PDF',
+  expectedHeading: 'Erwartete Überschrift',
+  actualDestination: 'Ziel im PDF',
+  destinationY: 'y {y} pt',
   reason: 'Begründung',
   foundOnPages: 'Gefunden auf Seiten',
   intentionalExclusion: 'Bewusste Ausnahme',
@@ -135,10 +138,33 @@ export const messages: Messages = {
   reasonWrappedRow:
     'Zeilentext stimmt überein, erstreckt sich aber über mehrere Zeilen oder Seiten. Zellzuordnung visuell bestätigen.',
   reasonChangedUrl: 'Die PDF-Linkannotation an diesem Text hat ein anderes Ziel.',
-  reasonLinkManual:
-    'Linktext ist vorhanden, aber keine eindeutige URL-Annotation zuordenbar. v0.1 löst interne PDF-Ziele nicht auf.',
+  reasonLinkManual: 'Linktext ist vorhanden, aber keine eindeutige URL-Annotation zuordenbar.',
   reasonLinkFound:
     'Linktext und URL-Annotation in diesem Abschnitt gefunden. Sichtbarkeit weiterhin visuell prüfen.',
+  reasonFragmentMissing: 'Die Fragment-ID ist im Quell-HTML keinem Element zugeordnet.',
+  reasonFragmentDuplicate: 'Die Fragment-ID kommt bei mehreren Elementen im Quell-HTML vor.',
+  reasonFragmentNotHeading:
+    'Das Fragment verweist auf ein Element, das keine HTML-Überschrift ist.',
+  reasonSourceHeadingText: 'Der Text der Quellüberschrift eignet sich nicht für den Abgleich.',
+  reasonSourceHeadingRepeated:
+    'Der Text der erwarteten Überschrift kommt auch an anderer Stelle im Quelldokument vor.',
+  reasonInternalLabel: 'Der Text des internen Links lässt sich nicht eindeutig lokalisieren.',
+  reasonInternalAnnotationMissing:
+    'Der eindeutig lokalisierte interne Linktext hat keine PDF-Link-Annotation.',
+  reasonInternalAnnotationManual:
+    'Dem internen Linktext lässt sich keine eindeutige PDF-Link-Annotation zuordnen.',
+  reasonInternalUnresolved: 'Das interne PDF-Ziel der Link-Annotation lässt sich nicht auflösen.',
+  reasonPdfHeadingManual:
+    'Die erwartete Überschrift lässt sich in der PDF-Textebene nicht eindeutig lokalisieren.',
+  reasonInternalWrongPage:
+    'Der interne Link verweist auf eine andere Seite als die erwartete Überschrift.',
+  reasonInternalPageOnly:
+    'Das interne Ziel liefert keine brauchbare vertikale Position auf der erwarteten Seite.',
+  reasonInternalPosition:
+    'Der vertikalen Zielposition lässt sich keine eindeutige Überschrift zuordnen.',
+  reasonInternalFound: 'Das interne Linkziel entspricht der erwarteten Überschrift.',
+  reasonInternalWrongHeading:
+    'Der interne Link verweist auf eine andere Überschrift auf derselben Seite.',
   reasonFound:
     'Ein unabhängiges Vorkommen ist in der Textebene dieses Abschnitts vorhanden. Das belegt keine Sichtbarkeit.',
   warningVisibility:

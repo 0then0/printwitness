@@ -1,4 +1,4 @@
-import type { Expectation, Status } from '../core/types.ts';
+import type { Expectation, PdfDestination, Status } from '../core/types.ts';
 import { messages as de } from './de.ts';
 import { en, type MessageKey, type Messages } from './en.ts';
 import { messages as es } from './es.ts';
@@ -48,6 +48,14 @@ export const statusLabel = (locale: Locale, status: Status) =>
   translator(locale)(statusKeys[status]);
 export const kindLabel = (locale: Locale, kind: Expectation['kind']) =>
   translator(locale)(kindKeys[kind]);
+export function destinationLabel(locale: Locale, destination?: PdfDestination, href?: string) {
+  const t = translator(locale);
+  if (destination?.page === undefined) return href ?? t('unresolved');
+  const page = t('pageShort', { page: destination.page });
+  return destination.y === undefined
+    ? page
+    : `${page} · ${t('destinationY', { y: destination.y })}`;
+}
 
 // Core/JSON diagnostics stay stable across locales. Only presentation is translated.
 // Known messages are centralized here so the UI and standalone reports cannot drift.
@@ -68,10 +76,33 @@ export const diagnosticKeys: Record<string, MessageKey> = {
   'Row text matches, but spans multiple baselines/pages. Cell-to-row geometry requires visual confirmation.':
     'reasonWrappedRow',
   'The PDF link annotation at this label has a different destination.': 'reasonChangedUrl',
+  'Link label is present, but a unique URL annotation could not be associated with it.':
+    'reasonLinkManual',
   'Link label is present, but a unique URL annotation could not be associated with it. Internal PDF destinations are not resolved in v0.1.':
     'reasonLinkManual',
   'Label and URL annotation found in this section. Visibility still requires visual inspection.':
     'reasonLinkFound',
+  'The source fragment has no matching element ID.': 'reasonFragmentMissing',
+  'The source fragment matches more than one element ID.': 'reasonFragmentDuplicate',
+  'The source fragment targets an element other than an HTML heading.': 'reasonFragmentNotHeading',
+  'The source heading has no usable text for matching.': 'reasonSourceHeadingText',
+  'The expected heading text also occurs elsewhere in the source.': 'reasonSourceHeadingRepeated',
+  'The internal link label cannot be located unambiguously.': 'reasonInternalLabel',
+  'No PDF link annotation covers the uniquely located internal link label.':
+    'reasonInternalAnnotationMissing',
+  'A unique PDF link annotation could not be associated with the internal link label.':
+    'reasonInternalAnnotationManual',
+  'The link annotation has no resolvable internal PDF destination.': 'reasonInternalUnresolved',
+  'The expected heading could not be uniquely located in the PDF text layer.':
+    'reasonPdfHeadingManual',
+  'The internal link points to a different page from the expected heading.':
+    'reasonInternalWrongPage',
+  'The internal destination gives no usable vertical position on the expected page.':
+    'reasonInternalPageOnly',
+  'The vertical destination could not be associated with a unique heading.':
+    'reasonInternalPosition',
+  'The internal link destination aligns with the expected heading.': 'reasonInternalFound',
+  'The internal link points to a different heading on the same page.': 'reasonInternalWrongHeading',
   'Independent occurrence found in this section’s text layer. This does not prove visibility.':
     'reasonFound',
   'Text-layer presence does not prove visibility. Clipping, overlays and transparency are not universally detected.':

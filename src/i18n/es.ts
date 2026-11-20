@@ -96,6 +96,9 @@ export const messages: Messages = {
   expectedContent: 'Contenido esperado',
   expectedUrl: 'URL esperada',
   actualUrl: 'URL en el PDF',
+  expectedHeading: 'Encabezado esperado',
+  actualDestination: 'Destino en el PDF',
+  destinationY: 'y {y} pt',
   reason: 'Motivo',
   foundOnPages: 'Encontrado en las páginas',
   intentionalExclusion: 'Exclusión intencional',
@@ -135,10 +138,31 @@ export const messages: Messages = {
   reasonWrappedRow:
     'El texto coincide, pero ocupa varias líneas o páginas. Confirma visualmente la asociación de las celdas.',
   reasonChangedUrl: 'La anotación de enlace del PDF en este texto tiene otro destino.',
-  reasonLinkManual:
-    'El texto está presente, pero no se puede asociar una anotación URL única. v0.1 no resuelve destinos internos del PDF.',
+  reasonLinkManual: 'El texto está presente, pero no se puede asociar una anotación URL única.',
   reasonLinkFound:
     'Se encontraron el texto y la anotación URL en esta sección. La visibilidad requiere inspección visual.',
+  reasonFragmentMissing: 'No hay ningún elemento de origen con el ID del fragmento.',
+  reasonFragmentDuplicate: 'Varios elementos de origen tienen el ID del fragmento.',
+  reasonFragmentNotHeading: 'El fragmento apunta a un elemento que no es un encabezado HTML.',
+  reasonSourceHeadingText: 'El encabezado de origen no tiene texto utilizable para la comparación.',
+  reasonSourceHeadingRepeated:
+    'El texto del encabezado esperado aparece también en otra parte del documento de origen.',
+  reasonInternalLabel: 'No se pudo localizar de forma inequívoca el texto del enlace interno.',
+  reasonInternalAnnotationMissing:
+    'Ninguna anotación PDF cubre el texto del enlace interno localizado.',
+  reasonInternalAnnotationManual:
+    'No se pudo asociar una única anotación PDF con el texto del enlace interno.',
+  reasonInternalUnresolved:
+    'La anotación del enlace no tiene un destino interno resoluble en el PDF.',
+  reasonPdfHeadingManual:
+    'No se pudo localizar de forma inequívoca el encabezado esperado en la capa de texto del PDF.',
+  reasonInternalWrongPage:
+    'El enlace interno lleva a una página distinta de la del encabezado esperado.',
+  reasonInternalPageOnly:
+    'El destino interno no aporta una posición vertical utilizable en la página esperada.',
+  reasonInternalPosition: 'La posición vertical no permite identificar un único encabezado.',
+  reasonInternalFound: 'El destino del enlace interno coincide con el encabezado esperado.',
+  reasonInternalWrongHeading: 'El enlace interno apunta a otro encabezado en la misma página.',
   reasonFound:
     'Hay una aparición independiente en la capa de texto de esta sección. Esto no demuestra la visibilidad.',
   warningVisibility:

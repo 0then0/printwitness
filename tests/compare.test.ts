@@ -310,3 +310,79 @@ test('partial or overlapping URL rectangles do not establish a unique label dest
   }));
   assert.equal(check(m, p).status, 'manual');
 });
+
+const contentsLink = () =>
+  manifest([
+    exp('Read guide', {
+      kind: 'link',
+      href: '#appendix',
+      internalTarget: { fragment: 'appendix', heading: 'Appendix' },
+    }),
+  ]);
+
+test('a lone copy of a repeated end marker cannot distinguish the label from the boundary', () => {
+  const m = contentsLink();
+  [m.sections[0].expectations[0].text, m.sections[0].endContextNext] = ['Appendix', 'Terms'];
+  const only = index(['Title', 'Required', 'Appendix', 'Terms']);
+  only.linkAnnotationPages = [1];
+  assert.equal(check(m, only).status, 'manual');
+});
+
+test('an internal label must be unique and fully localized before a missing annotation is a mismatch', () => {
+  const m = contentsLink();
+  const make = (...labels: string[]) => index(['Title', 'Required', ...labels, 'Appendix']);
+  const plain = make('Read guide');
+  assert.equal(check(m, plain).status, 'manual', 'the annotation scan did not complete');
+  plain.linkAnnotationPages = [1];
+  assert.equal(check(m, plain).status, 'mismatch');
+
+  const repeated = make('Read guide', 'Read guide');
+  repeated.linkAnnotationPages = [1];
+  repeated.links = [{ page: 1, box: repeated.tokens[2].box, destination: { page: 1, y: 100 } }];
+  assert.match(check(m, repeated).findings[0].reason, /label cannot be located unambiguously/);
+
+  const columns = make('Read', 'guide');
+  columns.linkAnnotationPages = [1];
+  columns.tokens[3].box = { ...columns.tokens[3].box, x: 400, y: columns.tokens[2].box.y };
+  assert.equal(check(m, columns).status, 'manual', 'two columns cannot form one link label');
+
+  plain.links = [{ page: 1, box: { ...plain.tokens[2].box, width: 12 } }];
+  assert.equal(check(m, plain).status, 'manual', 'a partial annotation makes absence uncertain');
+});
+
+test('a destination needs independent, unambiguous heading geometry', () => {
+  const m = contentsLink();
+  m.headingTexts = ['Appendix', 'Nearby heading'];
+  const p = index(['Title', 'Required', 'Read guide', 'Appendix', 'Nearby heading']);
+  const y = p.tokens[3].box.y;
+  p.tokens[4].box.y = y + 6;
+  const dest = { page: 1, y: y + 3 };
+  p.links = [{ page: 1, box: p.tokens[2].box, destination: dest }];
+  assert.match(check(m, p).findings[0].reason, /could not be associated with a unique heading/);
+  dest.y = y - 10;
+  assert.equal(check(m, p).status, 'manual', 'whitespace above the heading is insufficient');
+  dest.y = y;
+  assert.equal(check(m, p).status, 'found');
+
+  // Keep the section boundary usable while adding a second copy of the target text.
+  m.sections[0].endContext = 'Nearby heading';
+  p.tokens.push({ ...p.tokens[3], box: { ...p.tokens[3].box, y: 180 } });
+  m.sections[0].after = 'Nearby heading';
+  assert.match(check(m, p).findings[0].reason, /expected heading could not be uniquely located/);
+});
+
+test('new optional manifest fields are validated before use', () => {
+  const valid = contentsLink();
+  assert.deepEqual(parseManifest(valid), valid);
+  for (const internalTarget of [
+    {},
+    { fragment: 'appendix' },
+    { fragment: '', heading: 'Appendix' },
+    { fragment: 'appendix', issue: 'unknown' },
+    { fragment: 'appendix', heading: 'Appendix', labelInHeading: 'true' },
+  ]) {
+    const malformed = structuredClone(valid);
+    Object.assign(malformed.sections[0].expectations[0], { internalTarget });
+    assert.throws(() => parseManifest(malformed), /Invalid manifest/);
+  }
+});

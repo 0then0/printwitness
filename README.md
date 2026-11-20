@@ -9,6 +9,8 @@
 
 Check whether required HTML text, table records and link destinations survive a PDF export. Freeze the expectations before printing, then compare a Chromium export or an existing text PDF with the same portable manifest.
 
+For a table of contents, select the section containing its links before freezing the manifest. PrintWitness checks same-document `#fragment` links to HTML headings and can distinguish headings on the same PDF page when the destination has a usable position.
+
 PrintWitness runs locally. Its workspace combines a checklist, rendered document pages and finding details. Reports export as JSON or standalone HTML with embedded page previews.
 
 ![PrintWitness workspace showing a missing table record beside the PDF and its finding details](docs/images/workspace.png)
@@ -116,11 +118,11 @@ The [WeasyPrint #2469 lab](docs/case-studies/weasyprint-2469.md) reproduces real
 
 ## Limits and privacy
 
-PrintWitness v0.1 supports text PDFs, mandatory DOM text, ordinary table rows and URL annotations. It does not provide OCR, AI analysis, automatic layout repair, PDF/A validation, accounts or a hosted service.
+PrintWitness supports text PDFs, mandatory DOM text, ordinary table rows, URL annotations and internal links to headings. It does not provide OCR, AI analysis, automatic layout repair, PDF/A validation, accounts or a hosted service.
 
 The server binds to loopback. Source files are read without modification, and source content is not sent to external services. Dynamic source scripts execute in a disposable Chromium context with restricted networking. Remote assets must be made local first. Use trusted local documents; see the [security model](SECURITY.md) for the exact boundary.
 
-Ambiguous section boundaries, wrapped or merged table cells, combined link-label items, unusual reading order and unsupported text layouts require manual review. The limits are 25 MiB per PDF, 100 PDF pages, 100 selected sections and 10,000 expectations. Reports contain document content and should be handled with the same care as their sources.
+Ambiguous section boundaries, wrapped or merged table cells, combined link-label items, unusual reading order and unsupported text layouts require manual review. Internal links also need review when only the correct page can be established or the position could belong to multiple headings. The limits are 25 MiB per PDF, 100 PDF pages, 100 selected sections and 10,000 expectations. Reports contain document content and should be handled with the same care as their sources.
 
 ## Dependency maintenance
 

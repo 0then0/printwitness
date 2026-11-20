@@ -45,3 +45,37 @@ await writeFile(
   new URL('corrupt.pdf', output),
   '%PDF-1.7\nDeliberately truncated synthetic PDF.\n',
 );
+
+const linkActions = [
+  ['Named control', '/Dest (renderer-name)'],
+  ['Direct control', '/A << /S /GoTo /D [3 0 R /FitH 102] >>'],
+  ['Wrong heading', '/Dest (expected)'],
+  ['Wrong page', '/Dest [4 0 R /XYZ 60 null null]'],
+  ['Page only', '/Dest [3 0 R /Fit]'],
+  ['No top', '/Dest [3 0 R /XYZ 25 null 0]'],
+  ['Unknown name', '/Dest (missing)'],
+  ['External control', '/A << /S /URI /URI (https://example.org/reference) >>'],
+];
+const labelY = (i: number) => 280 - i * 20;
+const textAt = (y: number, text: string) => `1 0 0 1 25 ${y} Tm (${text}) Tj`;
+const labels = linkActions.map(([label], i) => textAt(labelY(i), label));
+const annotations = linkActions.map(
+  ([, action], i) =>
+    `<< /Type /Annot /Subtype /Link /Rect [23 ${labelY(i) - 4} 220 ${labelY(i) + 13}] ${action} >>`,
+);
+const pageGeometry = '/MediaBox [0 0 330 340] /CropBox [10 20 310 320] /UserUnit 1.25';
+await writeFile(
+  new URL('link-actions.pdf', output),
+  pdf([
+    '<< /Type /Catalog /Pages 2 0 R /Names << /Dests << /Names [(expected) [3 0 R /XYZ 25 52 0] (renderer-name) [3 0 R /XYZ 25 102 0]] >> >> >>',
+    '<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 /Resources << /Font << /F1 7 0 R >> >> >>',
+    `<< /Type /Page /Parent 2 0 R ${pageGeometry} /Contents 5 0 R /Annots [${annotations.map((_, i) => `${i + 8} 0 R`).join(' ')}] >>`,
+    `<< /Type /Page /Parent 2 0 R ${pageGeometry} /Rotate 90 /Contents 6 0 R >>`,
+    stream(
+      `BT /F1 12 Tf ${[textAt(300, 'Contents'), ...labels, textAt(120, 'No annotation'), textAt(90, 'Expected heading'), textAt(40, 'Other heading')].join('\n')} ET`,
+    ),
+    stream(`BT /F1 12 Tf ${textAt(200, 'Another page')} ET`),
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    ...annotations,
+  ]),
+);

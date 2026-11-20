@@ -92,6 +92,90 @@ const readReport = async (path: string) => JSON.parse(await readFile(path, 'utf8
 // JSON drops undefined fields; compare the serialized contract without the run time.
 const semantic = ({ createdAt: _, ...report }: Report) => JSON.parse(JSON.stringify(report));
 
+test('check resolves internal link actions and still accepts a legacy URL manifest', async (t) => {
+  const w = await workspace(t);
+  const pdf = 'link-actions.pdf';
+  const bytes = await readFile(pdfFixture('link-actions'));
+  await writeFile(w.file(pdf), bytes);
+  const cases = [
+    ['Named control', 'found', { name: 'renderer-name', type: 'XYZ', page: 1, y: 272.5 }],
+    ['Direct control', 'found', { type: 'FitH', page: 1, y: 272.5 }],
+    ['Wrong heading', 'mismatch', { name: 'expected', type: 'XYZ', page: 1, y: 335 }],
+    ['Wrong page', 'mismatch', { type: 'XYZ', page: 2, y: 62.5 }],
+    ['Page only', 'manual', { type: 'Fit', page: 1 }],
+    ['No top', 'manual', { type: 'XYZ', page: 1 }],
+    ['Unknown name', 'manual', { name: 'missing' }],
+    ['No annotation', 'mismatch', undefined],
+  ] as const;
+  const toc = {
+    ...section('toc', 'Contents', []),
+    endContext: 'Expected heading',
+  };
+  const external = {
+    id: 'external',
+    kind: 'link',
+    text: 'External control',
+    href: 'https://example.org/reference',
+  };
+  const legacy = manifestOf({ ...toc, expectations: [external] });
+  const manifest = parseManifest({
+    ...manifestOf({
+      ...toc,
+      expectations: cases.map(([text], i) => ({
+        id: `link-${i}`,
+        kind: 'link',
+        text,
+        href: '#expected',
+        internalTarget: { fragment: 'expected', heading: 'Expected heading' },
+      })),
+    }),
+    headingTexts: ['Contents', 'Expected heading', 'Other heading'],
+  });
+  await put(w, 'expected.json', manifest);
+  const result = run(w, check('expected.json', pdf, 'out', '--json'));
+  assert.equal(result.status, exitCodes.mismatch, result.stderr);
+  const report = await readReport(w.file(`out/${reportFiles.json}`));
+  assert.deepEqual(JSON.parse(result.stdout), report);
+  const html = await readFile(w.file(`out/${reportFiles.html}`), 'utf8');
+  for (const [i, [label, status, destination]] of cases.entries()) {
+    const f = report.findings[i];
+    assert.equal(f.expected, label);
+    assert.equal(f.status, status, f.reason);
+    assert.deepEqual(f.actualDestination, destination);
+    const item = html.split('<li ').find((item) => item.includes(`data-finding="${f.id}"`));
+    assert(item);
+    assert(item.startsWith(`class="${status}"`));
+    assert(item.includes(`<p>${label}</p>`));
+    assert(item.includes('Expected heading: Expected heading'));
+    assert(item.includes(f.reason));
+    if (destination && 'page' in destination) assert(item.includes(`p. ${destination.page}`));
+    if (destination && 'y' in destination) assert(item.includes(`y ${destination.y} pt`));
+  }
+  assert.match(report.findings[2].reason, /different heading on the same page/);
+  assert.match(report.findings[3].reason, /different page/);
+  assert.match(report.findings[7].reason, /No PDF link annotation/);
+
+  const server = await startServer({ port: 0 });
+  t.after(() => server.close());
+  const response = await fetch(`${server.url}/api/check`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-PrintWitness': '1' },
+    body: JSON.stringify({ manifest, name: pdf, pdf: bytes.toString('base64') }),
+  });
+  assert.equal(response.status, 200);
+  assert.deepEqual(
+    semantic(((await response.json()) as { report: Report }).report),
+    semantic(report),
+  );
+
+  await put(w, 'legacy.json', legacy);
+  const old = run(w, check('legacy.json', pdf, 'out-legacy', '--json'));
+  assert.equal(old.status, exitCodes.passed, old.stderr);
+  const legacyReport = JSON.parse(old.stdout) as Report;
+  assert.deepEqual(legacyReport.manifest, legacy);
+  assert.equal(legacyReport.findings[0].actualHref, external.href);
+});
+
 test('a valid PDF and manifest pass with JSON and HTML evidence from one run', async (t) => {
   const w = await workspace(t);
   await put(w, 'expected.json', found);

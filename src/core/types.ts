@@ -1,10 +1,23 @@
 export type Status = 'found' | 'mismatch' | 'manual' | 'unverifiable';
+export type InternalTargetIssue =
+  | 'missing-fragment'
+  | 'duplicate-id'
+  | 'not-heading'
+  | 'heading-text-unavailable'
+  | 'ambiguous-heading-text';
+export interface InternalTarget {
+  fragment: string;
+  heading?: string;
+  issue?: InternalTargetIssue;
+  labelInHeading?: true;
+}
 export interface Expectation {
   id: string;
   kind: 'text' | 'row' | 'link';
   text: string;
   cells?: string[];
   href?: string;
+  internalTarget?: InternalTarget;
   role?: 'table-header';
   excluded?: string;
 }
@@ -17,6 +30,8 @@ export interface Section {
   after: string | null;
   /** First following DOM block, or null only when no following content exists. */
   endContext?: string | null;
+  /** Following block or document end, captured when the link label repeats endContext. */
+  endContextNext?: string | null;
   /** Last preceding DOM block, or null at the document start. */
   startContext?: string | null;
   anchorInside?: boolean;
@@ -28,6 +43,7 @@ export interface Manifest {
   createdAt: string;
   source: { name: string; sha256: string; readiness: string };
   exclusions: string[];
+  headingTexts?: string[];
   sections: Section[];
 }
 export interface Box {
@@ -45,7 +61,16 @@ export interface PdfToken {
 export interface PdfLink {
   page: number;
   box: Box;
-  href: string;
+  href?: string;
+  destination?: PdfDestination;
+  hitBoxes?: Box[];
+}
+export interface PdfDestination {
+  name?: string;
+  type?: string;
+  page?: number;
+  /** Vertical position in the destination page's scale-1 viewport. */
+  y?: number;
 }
 export interface PdfPage {
   number: number;
@@ -57,6 +82,7 @@ export interface PdfIndex {
   pages: PdfPage[];
   tokens: PdfToken[];
   links: PdfLink[];
+  linkAnnotationPages?: number[];
   warnings: string[];
   error?: string;
 }
@@ -73,6 +99,8 @@ export interface Finding {
   expected: string;
   href?: string;
   actualHref?: string;
+  internalTarget?: InternalTarget;
+  actualDestination?: PdfDestination;
   status: Status;
   reason: string;
   evidence: Evidence[];

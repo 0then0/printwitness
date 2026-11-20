@@ -1,6 +1,43 @@
-import { getDocument, type PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import type { Box, PdfIndex } from '../core/types.ts';
+import {
+  getDocument,
+  isValidExplicitDest,
+  type PDFDocumentProxy,
+} from 'pdfjs-dist/legacy/build/pdf.mjs';
+import type { Box, PdfDestination, PdfIndex } from '../core/types.ts';
 import { pdfResources } from './pdf-resources.ts';
+
+async function resolveDestination(
+  doc: PDFDocumentProxy,
+  dest: string | unknown[],
+): Promise<PdfDestination> {
+  const observed: PdfDestination = typeof dest === 'string' ? { name: dest } : {};
+  try {
+    const explicit = typeof dest === 'string' ? await doc.getDestination(dest) : dest;
+    if (!Array.isArray(explicit) || !isValidExplicitDest(explicit)) return observed;
+    const [ref, mode, first, second] = explicit;
+    observed.type = mode.name;
+    const page = typeof ref === 'number' ? ref + 1 : (await doc.getPageIndex(ref)) + 1;
+    if (page < 1 || page > doc.numPages) return observed;
+    observed.page = page;
+
+    // XYZ supplies left/top, while FitH and FitBH only specify a usable top.
+    // Other fit modes are page-level evidence for this check.
+    const horizontalFit = mode.name === 'FitH' || mode.name === 'FitBH';
+    if (mode.name !== 'XYZ' && !horizontalFit) return observed;
+    const x = horizontalFit ? undefined : first;
+    const y = horizontalFit ? first : second;
+    const viewport = (await doc.getPage(page)).getViewport({ scale: 1 });
+    const [, b, , d] = viewport.transform;
+    // On a quarter-turned page the vertical position depends on PDF x instead of PDF y.
+    if ((b && !Number.isFinite(x)) || (d && (!Number.isFinite(y) || (horizontalFit && y < 0))))
+      return observed;
+    const [, top] = viewport.convertToViewportPoint(b ? x : 0, d ? y : 0);
+    if (top >= 0 && top <= viewport.height) observed.y = top;
+  } catch {
+    // A broken page reference or name leaves this destination unresolved.
+  }
+  return observed;
+}
 
 export interface PdfAnalysis {
   index: PdfIndex;
@@ -11,6 +48,9 @@ export async function analyzePdf(
   { resourceRoot }: { resourceRoot?: URL } = {},
 ): Promise<PdfAnalysis> {
   const index: PdfIndex = { pages: [], tokens: [], links: [], warnings: [] };
+  const linkAnnotationPages: number[] = [];
+  index.linkAnnotationPages = linkAnnotationPages;
+  const namedDestinations = new Map<string, PdfDestination>();
   const images: string[] = [];
   let doc: PDFDocumentProxy | undefined;
   const resources = pdfResources(resourceRoot);
@@ -62,14 +102,42 @@ export async function analyzePdf(
         height: viewport.height,
         text: pageText.join(' '),
       });
+      let linkRectanglesComplete = true;
       for (const annotation of await page.getAnnotations({ intent: 'display' })) {
+        if (annotation.subtype !== 'Link') continue;
         if (
-          annotation.subtype === 'Link' &&
-          typeof annotation.url === 'string' &&
-          Array.isArray(annotation.rect)
-        )
-          index.links.push({ page: n, box: rect(annotation.rect), href: annotation.url });
+          !Array.isArray(annotation.rect) ||
+          annotation.rect.length !== 4 ||
+          !annotation.rect.every(Number.isFinite)
+        ) {
+          linkRectanglesComplete = false;
+          continue;
+        }
+        const box = rect(annotation.rect);
+        if (!box.width || !box.height) linkRectanglesComplete = false;
+        const dest: unknown = annotation.dest;
+        let destination: PdfDestination | undefined;
+        if (typeof dest === 'string') {
+          destination = namedDestinations.get(dest) ?? (await resolveDestination(doc, dest));
+          namedDestinations.set(dest, destination);
+        } else if (Array.isArray(dest)) {
+          destination = await resolveDestination(doc, dest);
+        }
+        const hitBoxes: Box[] = [];
+        if (annotation.quadPoints instanceof Float32Array) {
+          const quad = annotation.quadPoints;
+          for (let i = 0; i < quad.length; i += 8)
+            hitBoxes.push(rect([quad[i], quad[i + 1], quad[i + 6], quad[i + 7]]));
+        }
+        index.links.push({
+          page: n,
+          box,
+          href: typeof annotation.url === 'string' ? annotation.url : undefined,
+          destination,
+          hitBoxes: hitBoxes.length ? hitBoxes : undefined,
+        });
       }
+      if (linkRectanglesComplete) linkAnnotationPages.push(n);
       try {
         const scale = Math.min(1.25, Math.sqrt(2_000_000 / (viewport.width * viewport.height)));
         const renderViewport = page.getViewport({ scale });

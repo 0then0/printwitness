@@ -1,0 +1,86 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Names << /Dests << /Names [(expected) [3 0 R /XYZ 25 52 0] (renderer-name) [3 0 R /XYZ 25 102 0]] >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 /Resources << /Font << /F1 7 0 R >> >> >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 330 340] /CropBox [10 20 310 320] /UserUnit 1.25 /Contents 5 0 R /Annots [8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R] >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 330 340] /CropBox [10 20 310 320] /UserUnit 1.25 /Rotate 90 /Contents 6 0 R >>
+endobj
+5 0 obj
+<< /Length 444 >>
+stream
+BT /F1 12 Tf 1 0 0 1 25 300 Tm (Contents) Tj
+1 0 0 1 25 280 Tm (Named control) Tj
+1 0 0 1 25 260 Tm (Direct control) Tj
+1 0 0 1 25 240 Tm (Wrong heading) Tj
+1 0 0 1 25 220 Tm (Wrong page) Tj
+1 0 0 1 25 200 Tm (Page only) Tj
+1 0 0 1 25 180 Tm (No top) Tj
+1 0 0 1 25 160 Tm (Unknown name) Tj
+1 0 0 1 25 140 Tm (External control) Tj
+1 0 0 1 25 120 Tm (No annotation) Tj
+1 0 0 1 25 90 Tm (Expected heading) Tj
+1 0 0 1 25 40 Tm (Other heading) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Length 51 >>
+stream
+BT /F1 12 Tf 1 0 0 1 25 200 Tm (Another page) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Link /Rect [23 276 220 293] /Dest (renderer-name) >>
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Link /Rect [23 256 220 273] /A << /S /GoTo /D [3 0 R /FitH 102] >> >>
+endobj
+10 0 obj
+<< /Type /Annot /Subtype /Link /Rect [23 236 220 253] /Dest (expected) >>
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Link /Rect [23 216 220 233] /Dest [4 0 R /XYZ 60 null null] >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Link /Rect [23 196 220 213] /Dest [3 0 R /Fit] >>
+endobj
+13 0 obj
+<< /Type /Annot /Subtype /Link /Rect [23 176 220 193] /Dest [3 0 R /XYZ 25 null 0] >>
+endobj
+14 0 obj
+<< /Type /Annot /Subtype /Link /Rect [23 156 220 173] /Dest (missing) >>
+endobj
+15 0 obj
+<< /Type /Annot /Subtype /Link /Rect [23 136 220 153] /A << /S /URI /URI (https://example.org/reference) >> >>
+endobj
+xref
+0 16
+0000000000 65535 f 
+0000000009 00000 n 
+0000000163 00000 n 
+0000000265 00000 n 
+0000000456 00000 n 
+0000000594 00000 n 
+0000001089 00000 n 
+0000001190 00000 n 
+0000001260 00000 n 
+0000001354 00000 n 
+0000001465 00000 n 
+0000001555 00000 n 
+0000001660 00000 n 
+0000001752 00000 n 
+0000001854 00000 n 
+0000001943 00000 n 
+trailer
+<< /Size 16 /Root 1 0 R >>
+startxref
+2070
+%%EOF

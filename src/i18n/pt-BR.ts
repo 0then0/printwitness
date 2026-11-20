@@ -96,6 +96,9 @@ export const messages: Messages = {
   expectedContent: 'Conteúdo esperado',
   expectedUrl: 'URL esperada',
   actualUrl: 'URL no PDF',
+  expectedHeading: 'Título esperado',
+  actualDestination: 'Destino no PDF',
+  destinationY: 'y {y} pt',
   reason: 'Motivo',
   foundOnPages: 'Encontrado nas páginas',
   intentionalExclusion: 'Exclusão intencional',
@@ -137,9 +140,29 @@ export const messages: Messages = {
     'O texto corresponde, mas ocupa várias linhas ou páginas. Confirme visualmente a associação das células.',
   reasonChangedUrl: 'A anotação de link do PDF neste rótulo tem outro destino.',
   reasonLinkManual:
-    'O rótulo está presente, mas não é possível associar uma anotação de URL única. A v0.1 não resolve destinos internos do PDF.',
+    'O rótulo está presente, mas não é possível associar uma anotação de URL única.',
   reasonLinkFound:
     'Rótulo e anotação de URL encontrados nesta seção. A visibilidade ainda exige inspeção visual.',
+  reasonFragmentMissing: 'Nenhum elemento da origem tem o ID do fragmento.',
+  reasonFragmentDuplicate: 'Mais de um elemento da origem tem o ID do fragmento.',
+  reasonFragmentNotHeading: 'O fragmento aponta para um elemento que não é um título HTML.',
+  reasonSourceHeadingText: 'O título de origem não contém texto que possa ser usado na comparação.',
+  reasonSourceHeadingRepeated:
+    'O texto do título esperado também aparece em outra parte do documento de origem.',
+  reasonInternalLabel: 'Não foi possível localizar o rótulo do link interno sem ambiguidade.',
+  reasonInternalAnnotationMissing:
+    'Nenhuma anotação PDF cobre o rótulo localizado do link interno.',
+  reasonInternalAnnotationManual:
+    'Não foi possível associar uma única anotação PDF ao rótulo do link interno.',
+  reasonInternalUnresolved: 'A anotação do link não tem um destino interno resolvível no PDF.',
+  reasonPdfHeadingManual:
+    'Não foi possível localizar o título esperado na camada de texto do PDF sem ambiguidade.',
+  reasonInternalWrongPage: 'O link interno aponta para outra página que não a do título esperado.',
+  reasonInternalPageOnly:
+    'O destino interno não fornece uma posição vertical utilizável na página esperada.',
+  reasonInternalPosition: 'A posição vertical não permite identificar um único título.',
+  reasonInternalFound: 'O destino do link interno corresponde ao título esperado.',
+  reasonInternalWrongHeading: 'O link interno aponta para outro título na mesma página.',
   reasonFound:
     'Uma ocorrência independente está presente na camada de texto desta seção. Isso não comprova a visibilidade.',
   warningVisibility:

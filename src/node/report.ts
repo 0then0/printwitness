@@ -1,6 +1,7 @@
 import type { Report } from '../core/types.ts';
 import {
   defaultLocale,
+  destinationLabel,
   diagnostic,
   kindLabel,
   type Locale,
@@ -21,10 +22,14 @@ export function reportHtml(
 ): string {
   const t = translator(locale);
   const findings = report.findings
-    .map(
-      (f) =>
-        `<li class="${f.status}"><a href="#${f.evidence.length ? `page-${f.evidence[0].page}` : 'pages'}" data-finding="${escapeHtml(f.id)}"><strong>${escapeHtml(f.excluded ? t('excluded') : statusLabel(locale, f.status))}</strong> · ${escapeHtml(f.section)} · ${escapeHtml(kindLabel(locale, f.kind))}</a><p>${escapeHtml(f.expected)}</p>${f.href ? `<p>${escapeHtml(t('expectedUrl'))}: <code>${escapeHtml(f.href)}</code><br>${escapeHtml(t('actualUrl'))}: <code>${escapeHtml(f.actualHref ?? t('unresolved'))}</code></p>` : ''}<small>${escapeHtml(diagnostic(locale, f.reason))}</small></li>`,
-    )
+    .map((f) => {
+      const target = f.internalTarget
+        ? `<p>${escapeHtml(t('expectedHeading'))}: ${escapeHtml(f.internalTarget.heading ?? t('unresolved'))} <code>${escapeHtml(f.href ?? '')}</code><br>${escapeHtml(t('actualDestination'))}: ${escapeHtml(destinationLabel(locale, f.actualDestination, f.actualHref))}</p>`
+        : f.href
+          ? `<p>${escapeHtml(t('expectedUrl'))}: <code>${escapeHtml(f.href)}</code><br>${escapeHtml(t('actualUrl'))}: <code>${escapeHtml(f.actualHref ?? t('unresolved'))}</code></p>`
+          : '';
+      return `<li class="${f.status}"><a href="#${f.evidence.length ? `page-${f.evidence[0].page}` : 'pages'}" data-finding="${escapeHtml(f.id)}"><strong>${escapeHtml(f.excluded ? t('excluded') : statusLabel(locale, f.status))}</strong> · ${escapeHtml(f.section)} · ${escapeHtml(kindLabel(locale, f.kind))}</a><p>${escapeHtml(f.expected)}</p>${target}<small>${escapeHtml(diagnostic(locale, f.reason))}</small></li>`;
+    })
     .join('');
   const pages = report.pdf.pages
     .map(
