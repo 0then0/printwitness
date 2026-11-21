@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { paginationFindings } from '../core/pagination.ts';
 import type { Finding, Manifest, Report, Status } from '../core/types.ts';
 import type { MessageKey } from '../i18n/en.ts';
 import {
   defaultLocale,
   destinationLabel,
   diagnostic,
+  findingSection,
   isLocale,
   kindLabel,
   type Locale,
   localeNames,
   locales,
+  paginationLabels,
   statusLabel,
   translator,
 } from '../i18n/index.ts';
@@ -140,7 +143,7 @@ function App() {
   function acceptManifest(m: Manifest) {
     setManifest(m);
     clearReport();
-    setSelected(m.sections[0].expectations[0].id);
+    setSelected(m.sections[0]?.expectations[0]?.id ?? paginationFindings(m)[0]?.id ?? '');
     setFilter('all');
     setSetup(false);
   }
@@ -160,16 +163,21 @@ function App() {
     manifest?.sections.flatMap((s) =>
       s.expectations.map((e) => ({ ...e, section: s.title, sectionId: s.id })),
     ) ?? [];
-  const findings: Finding[] =
-    report?.findings ??
-    expected.map((e) => ({
+  const frozenPagination = manifest ? paginationFindings(manifest) : [];
+  const findings: Finding[] = report?.findings ?? [
+    ...expected.map((e) => ({
       ...e,
       expected: e.text,
       status: 'unverifiable' as Status,
       reason: '',
       evidence: [],
-    }));
+    })),
+    ...frozenPagination,
+  ];
   const current = findings.find((f) => f.id === selected);
+  const pagination = current && paginationLabels(locale, current);
+  const hasPageCount = manifest?.pagination?.pageCount !== undefined;
+  const pageCount = report?.pdf.pageCount ?? '—';
   const visible = findings.filter(
     (f) =>
       (filter === 'all' ||
@@ -385,10 +393,10 @@ function App() {
           <strong>{report?.pdf.name ?? manifest?.source.name ?? t('noDocument')}</strong>
           <span>
             {report
-              ? t('pageCount', { count: report.pdf.pages.length })
+              ? t('pageCount', { count: pageCount })
               : manifest
                 ? t('expectationCount', {
-                    count: expected.length,
+                    count: expected.length + frozenPagination.length,
                     sections: manifest.sections.length,
                   })
                 : t('startHtml')}
@@ -451,7 +459,7 @@ function App() {
           </div>
           {report && (
             <p className={`report-state ${report.status}`} data-testid="report-status">
-              {statusLabel(locale, report.status)}
+              {statusLabel(locale, report.status, hasPageCount)}
             </p>
           )}
           <div className="check-tools">
@@ -470,7 +478,7 @@ function App() {
               <option value="issues">{t('needsAttention')}</option>
               {(['found', 'mismatch', 'manual', 'unverifiable'] as const).map((key) => (
                 <option key={key} value={key}>
-                  {statusLabel(locale, key)}
+                  {statusLabel(locale, key, hasPageCount)}
                 </option>
               ))}
             </select>
@@ -495,14 +503,14 @@ function App() {
                       {f.excluded
                         ? t('excluded')
                         : report
-                          ? statusLabel(locale, f.status)
+                          ? statusLabel(locale, f.status, f.kind === 'page-count')
                           : t('frozen')}
                     </span>
                     <small>{kindLabel(locale, f.kind)}</small>
                   </div>
                   <strong>{f.expected}</strong>
                   <small>
-                    {f.section}
+                    {findingSection(locale, f)}
                     {f.evidence.length ? ` · ${t('pageShort', { page: f.evidence[0].page })}` : ''}
                   </small>
                 </button>
@@ -538,9 +546,7 @@ function App() {
               >
                 ←
               </button>
-              <span>
-                {t('pageOf', { page: report ? page : '—', total: report?.pdf.pages.length ?? '—' })}
-              </span>
+              <span>{t('pageOf', { page: report ? page : '—', total: pageCount })}</span>
               <button
                 type="button"
                 aria-label={t('nextPage')}
@@ -598,16 +604,28 @@ function App() {
           {current ? (
             <div className="detail-content">
               <span className="eyebrow">{kindLabel(locale, current.kind)}</span>
-              <h3>{current.section}</h3>
+              <h3>{findingSection(locale, current)}</h3>
               <p className={`detail-status ${report ? current.status : ''}`}>
                 {current.excluded
                   ? t('explicitlyExcluded')
                   : report
-                    ? statusLabel(locale, current.status)
+                    ? statusLabel(locale, current.status, current.kind === 'page-count')
                     : t('frozen')}
               </p>
-              <h4>{t('expectedContent')}</h4>
-              <blockquote>{current.expected}</blockquote>
+              {current.kind !== 'page-count' && (
+                <>
+                  <h4>
+                    {t(current.kind === 'heading-page' ? 'expectedHeading' : 'expectedContent')}
+                  </h4>
+                  <blockquote>{current.expected}</blockquote>
+                </>
+              )}
+              {pagination && (
+                <>
+                  <p>{pagination.expected}</p>
+                  {report && <p>{pagination.actual}</p>}
+                </>
+              )}
               {current.internalTarget ? (
                 <>
                   <h4>{t('expectedHeading')}</h4>
@@ -650,7 +668,7 @@ function App() {
                   </div>
                 </>
               )}
-              {!report && (
+              {!report && !pagination && (
                 <div className="exclusion">
                   <h4>{t('intentionalExclusion')}</h4>
                   {current.excluded ? (

@@ -55,6 +55,7 @@ export const messages: Messages = {
   checking: 'Vérification du PDF…',
   checks: 'Vérifications',
   statusFound: 'Trouvé dans la couche de texte',
+  statusPassed: 'Réussi',
   statusMismatch: 'Écart confirmé',
   statusManual: 'Vérification manuelle',
   statusUnverifiable: 'Impossible à vérifier',
@@ -68,6 +69,13 @@ export const messages: Messages = {
   kindText: 'Texte',
   kindRow: 'Ligne de tableau',
   kindLink: 'Lien',
+  kindPageCount: 'Nombre de pages',
+  kindHeadingPage: 'Page du titre',
+  pagination: 'Pagination',
+  expectedPageCount: 'Nombre de pages attendu : {count}',
+  actualPageCount: 'Nombre de pages réel : {count}',
+  expectedHeadingPage: 'Page attendue : {page}',
+  actualHeadingPages: 'Pages détectées : {pages}',
   pageShort: 'p. {page}',
   noChecks: 'Aucune vérification correspondante.',
   checksPlaceholder: 'Les textes, lignes et liens enregistrés apparaîtront ici.',
@@ -164,6 +172,15 @@ export const messages: Messages = {
   reasonInternalPosition: 'La position verticale ne permet pas d’identifier un titre unique.',
   reasonInternalFound: 'La destination du lien interne correspond au titre attendu.',
   reasonInternalWrongHeading: 'Le lien interne mène à un autre titre de la même page.',
+  reasonPaginationUnavailable: 'Impossible d’ouvrir le PDF pour vérifier la pagination.',
+  reasonPageCountFound: 'Le PDF contient le nombre de pages attendu.',
+  reasonPageCountMismatch: 'Le nombre de pages du PDF diffère du nombre attendu.',
+  reasonHeadingRepeated: 'Le titre apparaît plusieurs fois dans la couche de texte du PDF.',
+  reasonHeadingTextIncomplete:
+    'Le texte extrait est inutilisable ou absent sur certaines pages du PDF. Vérifiez le titre manuellement.',
+  reasonHeadingMissing: 'Le titre n’a pas pu être localisé dans la couche de texte du PDF.',
+  reasonHeadingPageFound: 'Le titre se trouve sur la page attendue du PDF.',
+  reasonHeadingPageMismatch: 'Le titre se trouve sur une autre page du PDF que celle attendue.',
   reasonFound:
     'Une occurrence indépendante est présente dans la couche de texte de cette section. Cela ne prouve pas sa visibilité.',
   warningVisibility:
@@ -178,7 +195,9 @@ export const messages: Messages = {
     'Impossible de lire le PDF. Il est peut-être chiffré, endommagé ou non pris en charge.',
   errorPdfSize: 'Le PDF dépasse 25 MiB.',
   errorManifest:
-    'Manifeste invalide. Format printwitness/1, sections non vides et identifiants uniques requis.',
+    'Manifeste invalide. Format printwitness/1, attentes valides et identifiants uniques requis.',
+  errorPagination:
+    'Manifeste invalide. Indiquez un nombre de pages ou des pages de titres sans contradiction. Utilisez des nombres entiers positifs.',
   errorOptions: 'Options de source invalides. Le délai doit être de 100 à 60000 ms.',
   errorLocalOnly:
     'Seuls les fichiers HTML locaux et les URL HTTP(S) de bouclage sont pris en charge.',

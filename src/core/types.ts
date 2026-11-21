@@ -38,12 +38,17 @@ export interface Section {
   headers: string[];
   expectations: Expectation[];
 }
+export interface Pagination {
+  pageCount?: number;
+  headings?: { text: string; page: number }[];
+}
 export interface Manifest {
   schema: 'printwitness/1';
   createdAt: string;
   source: { name: string; sha256: string; readiness: string };
   exclusions: string[];
   headingTexts?: string[];
+  pagination?: Pagination;
   sections: Section[];
 }
 export interface Box {
@@ -79,6 +84,8 @@ export interface PdfPage {
   text: string;
 }
 export interface PdfIndex {
+  /** Physical page count from the opened PDF, independent of page extraction. */
+  pageCount?: number;
   pages: PdfPage[];
   tokens: PdfToken[];
   links: PdfLink[];
@@ -91,11 +98,10 @@ export interface Evidence {
   box: Box;
   text: string;
 }
-export interface Finding {
+interface FindingBase {
   id: string;
   sectionId: string;
   section: string;
-  kind: Expectation['kind'];
   expected: string;
   href?: string;
   actualHref?: string;
@@ -106,11 +112,17 @@ export interface Finding {
   evidence: Evidence[];
   excluded?: string;
 }
+export type PaginationFinding = FindingBase &
+  (
+    | { kind: 'page-count'; expectedPageCount: number; actualPageCount: number | null }
+    | { kind: 'heading-page'; expectedPage: number; actualPages: number[] }
+  );
+export type Finding = (FindingBase & { kind: Expectation['kind'] }) | PaginationFinding;
 export interface Report {
   schema: 'printwitness-report/1';
   createdAt: string;
   manifest: Manifest;
-  pdf: { name: string; sha256: string; pages: PdfPage[] };
+  pdf: { name: string; sha256: string; pageCount?: number; pages: PdfPage[] };
   status: Status;
   findings: Finding[];
   warnings: string[];

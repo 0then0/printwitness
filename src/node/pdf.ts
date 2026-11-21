@@ -62,6 +62,7 @@ export async function analyzePdf(
   task.onPassword = () => task.destroy();
   try {
     doc = await task.promise;
+    index.pageCount = doc.numPages;
     if (doc.numPages > 100) throw new Error('v0.1 supports up to 100 PDF pages.');
     for (let n = 1; n <= doc.numPages; n++) {
       const page = await doc.getPage(n);

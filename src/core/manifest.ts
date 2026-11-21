@@ -1,15 +1,54 @@
+import { normalize } from './normalize.ts';
 import type { Manifest } from './types.ts';
+
+const maxExpectations = 10_000;
+const object = (x: unknown): x is Record<string, unknown> =>
+  !!x && typeof x === 'object' && !Array.isArray(x);
+const str = (x: unknown): x is string => typeof x === 'string' && x.length <= 100_000;
+const pageNumber = (x: unknown): x is number =>
+  typeof x === 'number' && Number.isSafeInteger(x) && x > 0;
+
+function invalidPagination(): never {
+  throw new Error(
+    'Invalid manifest: pagination needs a page count or non-conflicting heading expectations with positive integer page numbers.',
+  );
+}
+
+function paginationSize(value: unknown): number {
+  if (value === undefined) return 0;
+  if (!object(value)) invalidPagination();
+  const { pageCount, headings = [] } = value;
+  if (
+    (pageCount !== undefined && !pageNumber(pageCount)) ||
+    !Array.isArray(headings) ||
+    (pageCount === undefined && !headings.length) ||
+    headings.length > maxExpectations
+  )
+    invalidPagination();
+  const pagesByHeading = new Map<string, number>();
+  for (const heading of headings) {
+    if (
+      !object(heading) ||
+      !str(heading.text) ||
+      !pageNumber(heading.page) ||
+      (pageCount !== undefined && heading.page > pageCount)
+    )
+      invalidPagination();
+    const text = normalize(heading.text);
+    const previous = pagesByHeading.get(text);
+    if (!text || (previous !== undefined && previous !== heading.page)) invalidPagination();
+    pagesByHeading.set(text, heading.page);
+  }
+  return headings.length + (pageCount === undefined ? 0 : 1);
+}
 
 // Validate imported portable manifests at the trust boundary, including resource limits.
 export function parseManifest(value: unknown): Manifest {
-  const fail = (): never => {
+  function fail(): never {
     throw new Error(
-      'Invalid manifest: expected printwitness/1 with non-empty sections and unique IDs.',
+      'Invalid manifest: expected printwitness/1 with valid expectations and unique IDs.',
     );
-  };
-  const object = (x: unknown): x is Record<string, unknown> =>
-    !!x && typeof x === 'object' && !Array.isArray(x);
-  const str = (x: unknown): x is string => typeof x === 'string' && x.length <= 100_000;
+  }
   const nonempty = (x: unknown): x is string => str(x) && !!x.trim();
   const nullable = (x: unknown) => x === null || str(x);
   const strings = (x: unknown): x is string[] =>
@@ -43,14 +82,13 @@ export function parseManifest(value: unknown): Manifest {
     (value.headingTexts !== undefined &&
       (!Array.isArray(value.headingTexts) || !value.headingTexts.every(nonempty))) ||
     !Array.isArray(value.sections) ||
-    !value.sections.length ||
     value.sections.length > 100
   )
     fail();
-  const m = value as Record<string, unknown> & { sections: unknown[] };
   const ids = new Set<string>();
-  let count = 0;
-  for (const s of m.sections) {
+  let count = paginationSize(value.pagination);
+  if (count > maxExpectations || (!count && !value.sections.length)) fail();
+  for (const s of value.sections) {
     if (
       !object(s) ||
       !str(s.id) ||
@@ -72,11 +110,10 @@ export function parseManifest(value: unknown): Manifest {
       !s.expectations.length
     )
       fail();
-    const section = s as Record<string, unknown> & { id: string; expectations: unknown[] };
-    ids.add(section.id);
-    for (const e of section.expectations) {
+    ids.add(s.id);
+    for (const e of s.expectations) {
       if (
-        ++count > 10_000 ||
+        ++count > maxExpectations ||
         !object(e) ||
         !str(e.id) ||
         !e.id.trim() ||
@@ -97,8 +134,8 @@ export function parseManifest(value: unknown): Manifest {
         (e.kind === 'link' && (!str(e.href) || !e.href))
       )
         fail();
-      ids.add((e as { id: string }).id);
+      ids.add(e.id);
     }
   }
-  return structuredClone(value) as Manifest;
+  return structuredClone(value) as unknown as Manifest;
 }

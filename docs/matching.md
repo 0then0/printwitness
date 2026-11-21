@@ -46,6 +46,19 @@ Expectation kinds are `text`, `row` and `link`. A row has a nonempty `cells` arr
 
 An internal link also records `internalTarget` with its decoded `fragment` and the source `heading` text when available. An `issue` records a missing fragment, duplicate element ID, non-heading element, unavailable text or ambiguous heading text. `labelInHeading` preserves a link label that is itself part of a heading. The optional manifest-level `headingTexts` list supplies other heading labels for same-page comparison, including headings outside the selected sections. These fields are additive in `printwitness/1`. Older manifests are still readable and can be recaptured to acquire internal-link expectations.
 
+## Pagination expectations
+
+Add the optional top-level `pagination` object to a saved `printwitness/1` manifest before checking the PDF. Enter the expected values yourself and keep any existing section expectations you want to check. For a pagination-only manifest, set `sections` to `[]`. The [pagination fixture manifest](../fixtures/pagination/manifest.json) is a complete example.
+
+- `pageCount` is the exact number of physical PDF pages. Omit `headings` for a count-only check.
+- `headings` is an array of `{ "text": "Release approval", "page": 2 }` entries. Each `text` must be nonempty after normalization. The same normalized text cannot name different pages. Omit `pageCount` to check only heading locations.
+
+Supply at least one pagination expectation if you include the object. Counts and page numbers must be positive safe integers, and a heading page cannot exceed `pageCount` when that field is present. Page 1 means the first physical PDF page, regardless of printed numbers or PDF page labels. The parser rejects invalid expectations before PDF analysis. Manifests without `pagination` use the existing section checks.
+
+The count comes from PDF.js `numPages` as soon as the PDF opens. Pages with missing or unavailable text still count. Heading checks search the entire PDF for standalone heading text. They share the text and geometry analysis used for internal links, preserve normalized line wraps, and reject matches assembled from separate columns on the same line. One match on the expected page passes. One match elsewhere is a mismatch when extraction supports a confident result. Repeated text, an unlocated heading or incomplete extraction requires manual review. Even one match can be inconclusive when another page has no usable text. An unopened PDF leaves pagination unverifiable.
+
+Use the same [`check` command](usage.md#check-a-finished-pdf-from-the-command-line) with the edited manifest. Pagination checks use the existing status priority and exit codes.
+
 ## Section context
 
 `anchor`, `before` and `after` record the selected section's heading and neighboring headings. `endContext` records the first following DOM text block, including unselected content before the next heading. `null` means no following DOM content existed at capture. `startContext` records the last preceding DOM text block, or `null` at the document start. `anchorInside` records whether the heading belongs to the selected element. When its heading disappears, a section also needs its preceding DOM boundary; text before the original element cannot replace a lost record.
@@ -85,6 +98,8 @@ The destination must lie within 4 viewport points of the first extracted line's 
 `printwitness-report/1` includes the frozen manifest, PDF hash and page metadata, overall status, findings, evidence coordinates and warnings. Evidence uses PDF page coordinates at scale 1 with a top-left origin. The standalone HTML export embeds page images separately; JSON contains page text and evidence, not raster images.
 
 Internal link findings include the label, expected heading, reason and any observed destination in `actualDestination`. The page is one-based and `y` is measured down from the top of the destination page's viewport. The report can retain the raw destination name and fit type even when the location is unresolved. The interface and offline HTML display the observed page and position when available.
+
+The report's `pdf.pageCount` is present when the PDF opens. `pdf.pages` describes the pages that were indexed. A `page-count` finding has `expectedPageCount` and `actualPageCount`, which is `null` when the count is unknown. A `heading-page` finding has the heading text in `expected`, a one-based `expectedPage` and a sorted `actualPages` list of distinct pages detected in the text layer. The list can include candidate pages on a manual result, or be empty when no match could be located. Both findings show the status and reason in JSON and the standalone HTML.
 
 The core has no filesystem, browser, React or PDF.js dependency. It operates on a typed extraction index, so extraction confidence remains separate from presentation.
 

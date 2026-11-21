@@ -54,6 +54,7 @@ export const messages: Messages = {
   checking: 'Проверяю PDF…',
   checks: 'Проверки',
   statusFound: 'Найдено в текстовом слое',
+  statusPassed: 'Проверка пройдена',
   statusMismatch: 'Несоответствие',
   statusManual: 'Ручная проверка',
   statusUnverifiable: 'Невозможно проверить',
@@ -67,6 +68,13 @@ export const messages: Messages = {
   kindText: 'Текст',
   kindRow: 'Строка таблицы',
   kindLink: 'Ссылка',
+  kindPageCount: 'Число страниц',
+  kindHeadingPage: 'Страница заголовка',
+  pagination: 'Разбивка на страницы',
+  expectedPageCount: 'Ожидаемое число страниц: {count}',
+  actualPageCount: 'Фактическое число страниц: {count}',
+  expectedHeadingPage: 'Ожидаемая страница: {page}',
+  actualHeadingPages: 'Найдено на страницах: {pages}',
   pageShort: 'Стр. {page}',
   noChecks: 'Нет подходящих проверок.',
   checksPlaceholder: 'Здесь появятся зафиксированные тексты, строки таблиц и ссылки.',
@@ -161,6 +169,15 @@ export const messages: Messages = {
   reasonInternalPosition: 'По вертикальной координате не удалось однозначно определить заголовок.',
   reasonInternalFound: 'Назначение внутренней ссылки соответствует ожидаемому заголовку.',
   reasonInternalWrongHeading: 'Ссылка ведёт к другому заголовку на той же странице.',
+  reasonPaginationUnavailable: 'Не удалось открыть PDF для проверки разбивки на страницы.',
+  reasonPageCountFound: 'Число страниц PDF соответствует ожиданию.',
+  reasonPageCountMismatch: 'Число страниц PDF отличается от ожидаемого.',
+  reasonHeadingRepeated: 'Заголовок встречается несколько раз в текстовом слое PDF.',
+  reasonHeadingTextIncomplete:
+    'На некоторых страницах PDF не удалось извлечь пригодный для поиска текст. Проверьте заголовок вручную.',
+  reasonHeadingMissing: 'Не удалось найти заголовок в текстовом слое PDF.',
+  reasonHeadingPageFound: 'Заголовок находится на ожидаемой странице PDF.',
+  reasonHeadingPageMismatch: 'Заголовок находится на другой странице PDF.',
   reasonFound:
     'Независимое вхождение найдено в текстовом слое этого раздела. Это не доказывает видимость.',
   warningVisibility:
@@ -175,7 +192,9 @@ export const messages: Messages = {
     'Не удалось прочитать PDF. Возможны шифрование, повреждение или неподдерживаемый формат.',
   errorPdfSize: 'PDF превышает 25 MiB.',
   errorManifest:
-    'Некорректный manifest. Требуются printwitness/1, непустые разделы и уникальные ID.',
+    'Некорректный manifest. Требуются printwitness/1, корректные ожидания и уникальные ID.',
+  errorPagination:
+    'Некорректный manifest. Укажите число страниц или непротиворечивые номера страниц заголовков. Используйте целые положительные числа.',
   errorOptions: 'Некорректные параметры источника. Timeout должен быть от 100 до 60000 мс.',
   errorLocalOnly: 'Поддерживаются только локальные HTML-файлы и loopback HTTP(S) URL.',
   errorHtmlFile: 'Выберите файл .html или .htm.',

@@ -62,6 +62,18 @@ Lab artifact-integrity tests run with `npm test` without Docker or external down
 
 `tests/cli.test.ts` runs the real `src/node/cli.ts` entry point in subprocesses from a different working directory, using the synthetic PDFs and hand-written manifests. It asserts the exit codes (found, mismatch with manual in the same report, manual, textless and corrupt PDFs, usage and input errors, oversized files), JSON-only stdout, JSON/HTML artifacts from one run, unchanged inputs, refusal to overwrite existing reports, rollback after a failed write and SIGTERM during analysis. `tests/support/cli-fault.ts` is preloaded into those subprocesses to inject a missing PDF.js resource, a hung resource read and a failed HTML write without any hook in the product code. The CLI report is also compared, without its creation time, with direct `compare` output and with the local server's `/api/check` result.
 
+## Pagination fixtures
+
+`npm run validate` prints the [same HTML](../fixtures/pagination/source.html) with three print layouts using the Chromium revision pinned by Playwright. It runs the real CLI with [one hand-written manifest](../fixtures/pagination/manifest.json), verifies JSON and opens each standalone HTML report with the browser offline. Each run saves the three PDFs and their reports under `artifacts/validation/pagination-*/`.
+
+- `correct.pdf` has two pages and places **Release approval** on page 2. Both checks pass (exit `0`).
+- `leading-page.pdf` has three pages and places the heading on page 3. The page count is a mismatch (exit `1`). The heading needs manual review because the leading page has no usable text.
+- `moved-heading.pdf` has two pages and places the heading on page 1. The page count passes and the heading is a mismatch (exit `1`).
+
+Use Poppler's `pdfinfo` to confirm the page counts independently. Use `pdftotext -f N -l N FILE.pdf -` to inspect the text on physical page `N`.
+
+A 2023 report described a named page causing an unexpected empty first page. The fixture uses explicit CSS page breaks to control where the extra page appears. [WeasyPrint issue #1944](https://github.com/Kozea/WeasyPrint/issues/1944)
+
 ## External PDF resources
 
 `node --test tests/pdf.test.ts tests/i18n.test.ts` checks the local [synthetic PDF fixtures](../fixtures/pdf/README.md): predefined-CMap Unicode extraction and frozen-manifest comparison, plain text, textless and corrupt controls, plus unavailable resources in a disposable copy. Both PDF.js's silent empty-text recovery and the application's explicit incomplete-processing diagnosis are asserted. Tests also cover diagnostic translation and standalone report presentation in all seven languages.

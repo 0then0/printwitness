@@ -55,6 +55,7 @@ export const messages: Messages = {
   checking: 'Verificando PDF…',
   checks: 'Verificações',
   statusFound: 'Encontrado na camada de texto',
+  statusPassed: 'Aprovado',
   statusMismatch: 'Divergência',
   statusManual: 'Revisão manual',
   statusUnverifiable: 'Não verificável',
@@ -68,6 +69,13 @@ export const messages: Messages = {
   kindText: 'Texto',
   kindRow: 'Linha de tabela',
   kindLink: 'Link',
+  kindPageCount: 'Número de páginas',
+  kindHeadingPage: 'Página do título',
+  pagination: 'Paginação',
+  expectedPageCount: 'Número de páginas esperado: {count}',
+  actualPageCount: 'Número de páginas real: {count}',
+  expectedHeadingPage: 'Página esperada: {page}',
+  actualHeadingPages: 'Páginas detectadas: {pages}',
   pageShort: 'pág. {page}',
   noChecks: 'Nenhuma verificação correspondente.',
   checksPlaceholder: 'Textos, registros de tabelas e links salvos aparecerão aqui.',
@@ -163,6 +171,15 @@ export const messages: Messages = {
   reasonInternalPosition: 'A posição vertical não permite identificar um único título.',
   reasonInternalFound: 'O destino do link interno corresponde ao título esperado.',
   reasonInternalWrongHeading: 'O link interno aponta para outro título na mesma página.',
+  reasonPaginationUnavailable: 'Não foi possível abrir o PDF para verificar a paginação.',
+  reasonPageCountFound: 'O PDF tem o número de páginas esperado.',
+  reasonPageCountMismatch: 'O número de páginas do PDF difere do esperado.',
+  reasonHeadingRepeated: 'O título aparece várias vezes na camada de texto do PDF.',
+  reasonHeadingTextIncomplete:
+    'Algumas páginas do PDF não têm texto extraído utilizável. Inspecione o título manualmente.',
+  reasonHeadingMissing: 'Não foi possível localizar o título na camada de texto do PDF.',
+  reasonHeadingPageFound: 'O título está na página esperada do PDF.',
+  reasonHeadingPageMismatch: 'O título está em uma página do PDF diferente da esperada.',
   reasonFound:
     'Uma ocorrência independente está presente na camada de texto desta seção. Isso não comprova a visibilidade.',
   warningVisibility:
@@ -177,7 +194,9 @@ export const messages: Messages = {
     'Não foi possível ler o PDF. Ele pode estar criptografado, danificado ou não ser compatível.',
   errorPdfSize: 'O PDF excede 25 MiB.',
   errorManifest:
-    'Manifesto inválido. São necessários printwitness/1, seções com conteúdo e IDs únicos.',
+    'Manifesto inválido. São necessários printwitness/1, expectativas válidas e IDs únicos.',
+  errorPagination:
+    'Manifesto inválido. Informe um número de páginas ou páginas de títulos sem contradições. Use números inteiros positivos.',
   errorOptions: 'Opções de origem inválidas. O tempo limite deve ser de 100 a 60000 ms.',
   errorLocalOnly: 'Apenas arquivos HTML locais e URLs HTTP(S) de loopback são aceitos.',
   errorHtmlFile: 'Escolha um arquivo .html ou .htm.',

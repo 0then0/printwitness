@@ -1,0 +1,15 @@
+{
+  "schema": "printwitness/1",
+  "createdAt": "2026-11-21T00:00:00.000Z",
+  "source": {
+    "name": "source.html",
+    "sha256": "28ffaf2f6f11c51e3792c2fe9f4f65677152aec5c5ac49fe34f90be1ad0e64d6",
+    "readiness": "dom"
+  },
+  "exclusions": [],
+  "sections": [],
+  "pagination": {
+    "pageCount": 2,
+    "headings": [{ "text": "Release approval", "page": 2 }]
+  }
+}

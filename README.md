@@ -68,13 +68,15 @@ node /path/to/PrintWitness/src/node/cli.ts check \
   --output artifacts/printwitness
 ```
 
+For a fixed-layout document, add a top-level `pagination` object to `expected.json`. Set `pageCount` to the exact number of physical pages and add any `headings` as `{ "text": "Release approval", "page": 2 }` entries. For a page-count-only check, use `"pagination": { "pageCount": 2 }` and `"sections": []`. Page numbers start at 1. See the [example manifest](fixtures/pagination/manifest.json) and the [pagination reference](docs/matching.md#pagination-expectations).
+
 It writes `printwitness-report.json` and the standalone `printwitness-report.html` to a new output directory and never overwrites existing reports. `--json` prints only the JSON report to stdout; the summary and diagnostics go to stderr. Exit codes:
-- `0`: all applicable checks were found in the text layer.
+- `0`: all applicable expectations were confirmed.
 - `1`: confirmed violation (mismatch); it takes priority over incomplete findings in the same report.
 - `2`: manual review needed or the check is incomplete (manual or unverifiable). This is not a pass.
 - `3`: invalid arguments, unreadable input, invalid manifest or failed report output.
 
-Success proves the manifest's text-layer contract, not visible text or correct layout. `check` never creates or updates a manifest. See the [usage guide](docs/usage.md#check-a-finished-pdf-from-the-command-line) for incomplete results, limits and a CI example that keeps the reports when the check fails.
+Success confirms the manifest's content and pagination expectations against PDF data. `check` reads the manifest as supplied. See the [usage guide](docs/usage.md#check-a-finished-pdf-from-the-command-line) for incomplete results, limits and a CI example that keeps the reports when the check fails.
 
 ## Example report
 
@@ -122,7 +124,7 @@ PrintWitness supports text PDFs, mandatory DOM text, ordinary table rows, URL an
 
 The server binds to loopback. Source files are read without modification, and source content is not sent to external services. Dynamic source scripts execute in a disposable Chromium context with restricted networking. Remote assets must be made local first. Use trusted local documents; see the [security model](SECURITY.md) for the exact boundary.
 
-Ambiguous section boundaries, wrapped or merged table cells, combined link-label items, unusual reading order and unsupported text layouts require manual review. Internal links also need review when only the correct page can be established or the position could belong to multiple headings. The limits are 25 MiB per PDF, 100 PDF pages, 100 selected sections and 10,000 expectations. Reports contain document content and should be handled with the same care as their sources.
+Ambiguous section boundaries, wrapped or merged table cells, combined link-label items, unusual reading order and unsupported text layouts require manual review. Internal links also need review when only the correct page can be established or the position could belong to multiple headings. PDFs are limited to 25 MiB and page analysis covers up to 100 pages. The physical count is available when PDF.js opens the document. Manifests support up to 100 selected sections and 10,000 expectations. Reports contain document content and should be handled with the same care as their sources.
 
 ## Dependency maintenance
 

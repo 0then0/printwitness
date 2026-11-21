@@ -32,17 +32,25 @@ const manifest = (entries: Expectation[]): Manifest => ({
     },
   ],
 });
-function index(lines: string[]): PdfIndex {
-  const tokens = lines.map(
-    (text, i): PdfToken => ({
-      text,
-      page: 1,
-      lineEnd: true,
-      box: { x: 10, y: 20 + i * 20, width: text.length * 6, height: 10 },
-    }),
+function index(...pageLines: string[][]): PdfIndex {
+  const tokens = pageLines.flatMap((lines, page) =>
+    lines.map(
+      (text, i): PdfToken => ({
+        text,
+        page: page + 1,
+        lineEnd: true,
+        box: { x: 10, y: 20 + i * 20, width: text.length * 6, height: 10 },
+      }),
+    ),
   );
   return {
-    pages: [{ number: 1, width: 600, height: 800, text: lines.join(' ') }],
+    pageCount: pageLines.length,
+    pages: pageLines.map((lines, i) => ({
+      number: i + 1,
+      width: 600,
+      height: 800,
+      text: lines.join(' '),
+    })),
     tokens,
     links: [],
     warnings: [],
@@ -385,4 +393,110 @@ test('new optional manifest fields are validated before use', () => {
     Object.assign(malformed.sections[0].expectations[0], { internalTarget });
     assert.throws(() => parseManifest(malformed), /Invalid manifest/);
   }
+});
+
+const paginationOnly = (pagination: Manifest['pagination']): Manifest => ({
+  ...manifest([]),
+  sections: [],
+  pagination,
+});
+
+test('pagination validates normalized heading text and one-based page expectations', () => {
+  const heading = { text: 'Release approval', page: 2 };
+  for (const pagination of [
+    { pageCount: 2 },
+    { headings: [heading] },
+    { pageCount: 2, headings: [heading] },
+  ]) {
+    const m = paginationOnly(pagination);
+    assert.deepEqual(parseManifest(m), m);
+  }
+  assert.throws(() => parseManifest(paginationOnly(undefined)), /Invalid manifest/);
+  for (const pagination of [
+    null,
+    {},
+    { headings: [] },
+    { pageCount: 2, headings: null },
+    { pageCount: 1, headings: [heading] },
+    { headings: [heading, { text: 'Ｒelease\u00a0approval', page: 1 }] },
+    { headings: [{ text: '  \u00ad\u200b', page: 1 }] },
+    ...[0, -1, 1.5, '2', Number.MAX_SAFE_INTEGER + 1].flatMap((page) => [
+      { pageCount: page },
+      { headings: [{ ...heading, page }] },
+    ]),
+  ]) {
+    assert.throws(
+      () => parseManifest({ ...paginationOnly(undefined), pagination }),
+      /Invalid manifest: pagination/,
+    );
+  }
+});
+
+test('a repeated heading needs review even when one match is on the expected page', () => {
+  const m = paginationOnly({ headings: [{ text: 'Release approval', page: 1 }] });
+  for (const [pdf, pages] of [
+    [index(['Release approval'], ['Release approval']), [1, 2]],
+    [index(['Release approval', 'Release approval']), [1]],
+  ] as const) {
+    const report = check(m, pdf);
+    const [heading] = report.findings;
+    assert.equal(report.status, 'manual');
+    assert.equal(heading.kind, 'heading-page');
+    assert.equal(heading.expectedPage, 1);
+    assert.deepEqual(heading.actualPages, pages);
+    assert.equal(heading.evidence.length, 2);
+    assert.match(heading.reason, /multiple matches/);
+  }
+});
+
+test('wrapped headings participate in pagination uniqueness checks', () => {
+  for (const [text, first, second] of [
+    ['Release approval', 'Release ap-', 'proval'],
+    ['日本語', '日本', '語'],
+  ]) {
+    const m = paginationOnly({ headings: [{ text, page: 1 }] });
+    const wrapped = index([first, second]);
+    wrapped.tokens[1].box.y = wrapped.tokens[0].box.y + 14;
+    assert.equal(check(m, wrapped).status, 'found');
+
+    const repeated = index([text], [first, second]);
+    repeated.tokens[2].box.y = repeated.tokens[1].box.y + 14;
+    const [heading] = check(m, repeated).findings;
+    assert.equal(heading.kind, 'heading-page');
+    assert.equal(heading.status, 'manual');
+    assert.deepEqual(heading.actualPages, [1, 2]);
+    assert.match(heading.reason, /multiple matches/);
+  }
+});
+
+test('pagination cannot assemble a heading from separate columns on one baseline', () => {
+  const m = paginationOnly({ headings: [{ text: 'Release approval', page: 1 }] });
+  const pdf = index(['Release', 'approval']);
+  pdf.tokens[1].box.y = pdf.tokens[0].box.y;
+  pdf.tokens[1].box.x = 300;
+  const [heading] = check(m, pdf).findings;
+  assert.equal(heading.kind, 'heading-page');
+  assert.equal(heading.status, 'manual');
+  assert.deepEqual(heading.actualPages, []);
+
+  pdf.tokens[1].box.x = 56;
+  assert.equal(check(m, pdf).status, 'found');
+});
+
+test('a partially indexed PDF retains its physical count and observed heading pages', () => {
+  const m = paginationOnly({ pageCount: 2, headings: [{ text: 'Release approval', page: 1 }] });
+  const pdf = index(['Cover'], ['Release approval']);
+  pdf.pageCount = 3;
+  const report = check(m, pdf);
+  const [count, heading] = report.findings;
+  assert.equal(report.status, 'mismatch');
+  assert.equal(report.pdf.pageCount, 3);
+  assert.equal(report.pdf.pages.length, 2);
+  assert.equal(count.kind, 'page-count');
+  assert.equal(count.status, 'mismatch');
+  assert.equal(count.actualPageCount, 3);
+  assert.equal(heading.kind, 'heading-page');
+  assert.equal(heading.status, 'manual');
+  assert.deepEqual(heading.actualPages, [2]);
+  assert.match(heading.reason, /lack usable extracted text/);
 });

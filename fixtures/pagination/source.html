@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" data-variant="correct">
+<meta charset="utf-8">
+<title>Dispatch record</title>
+<style>
+  @page { size: A6; margin: 12mm; }
+  body { margin: 0; font: 14px sans-serif; }
+  #leading { display: none; }
+  [data-variant="leading-page"] #leading { display: block; height: 1px; break-after: page; }
+  [data-variant]:not([data-variant="moved-heading"]) #approval { break-before: page; }
+  [data-variant="moved-heading"] #archive { break-before: page; }
+</style>
+<div id="leading" aria-hidden="true"></div>
+<section>
+  <h1>Dispatch record</h1>
+  <p>Batch PW-17 is ready.</p>
+</section>
+<section id="approval">
+  <h2>Release approval</h2>
+  <p>The reviewer signed the release.</p>
+</section>
+<section id="archive">
+  <h2>Archive notes</h2>
+  <p>File the signed record.</p>
+</section>
+</html>

@@ -4,6 +4,10 @@ Notable user-facing changes are recorded here. Release dates use UTC. Published 
 
 ## [Unreleased]
 
+### Added
+
+- Optional manifest pagination expectations for an exact physical PDF page count and selected heading locations. JSON and offline HTML reports include the expected and observed values and verdict reasons. A confirmed page count mismatch is reported even when heading checks require manual review. See the [pagination reference](docs/matching.md#pagination-expectations).
+
 ## [0.3.0] - 2026-11-21
 
 ### Added

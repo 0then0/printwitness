@@ -55,6 +55,7 @@ export const messages: Messages = {
   checking: 'Verificando PDF…',
   checks: 'Comprobaciones',
   statusFound: 'Encontrado en la capa de texto',
+  statusPassed: 'Superado',
   statusMismatch: 'Discrepancia',
   statusManual: 'Revisión manual',
   statusUnverifiable: 'No verificable',
@@ -68,6 +69,13 @@ export const messages: Messages = {
   kindText: 'Texto',
   kindRow: 'Fila de tabla',
   kindLink: 'Enlace',
+  kindPageCount: 'Número de páginas',
+  kindHeadingPage: 'Página del encabezado',
+  pagination: 'Paginación',
+  expectedPageCount: 'Número de páginas esperado: {count}',
+  actualPageCount: 'Número de páginas real: {count}',
+  expectedHeadingPage: 'Página esperada: {page}',
+  actualHeadingPages: 'Páginas detectadas: {pages}',
   pageShort: 'pág. {page}',
   noChecks: 'No hay comprobaciones coincidentes.',
   checksPlaceholder: 'Aquí aparecerán los textos, registros y enlaces guardados.',
@@ -163,6 +171,15 @@ export const messages: Messages = {
   reasonInternalPosition: 'La posición vertical no permite identificar un único encabezado.',
   reasonInternalFound: 'El destino del enlace interno coincide con el encabezado esperado.',
   reasonInternalWrongHeading: 'El enlace interno apunta a otro encabezado en la misma página.',
+  reasonPaginationUnavailable: 'No se pudo abrir el PDF para comprobar la paginación.',
+  reasonPageCountFound: 'El PDF tiene el número de páginas esperado.',
+  reasonPageCountMismatch: 'El número de páginas del PDF difiere del esperado.',
+  reasonHeadingRepeated: 'El encabezado aparece varias veces en la capa de texto del PDF.',
+  reasonHeadingTextIncomplete:
+    'Algunas páginas del PDF no tienen texto extraído utilizable. Revisa el encabezado manualmente.',
+  reasonHeadingMissing: 'No se pudo localizar el encabezado en la capa de texto del PDF.',
+  reasonHeadingPageFound: 'El encabezado está en la página esperada del PDF.',
+  reasonHeadingPageMismatch: 'El encabezado está en una página del PDF distinta de la esperada.',
   reasonFound:
     'Hay una aparición independiente en la capa de texto de esta sección. Esto no demuestra la visibilidad.',
   warningVisibility:
@@ -176,7 +193,9 @@ export const messages: Messages = {
   errorPdfRead: 'No se puede leer el PDF. Puede estar cifrado, dañado o no ser compatible.',
   errorPdfSize: 'El PDF supera los 25 MiB.',
   errorManifest:
-    'Manifiesto no válido. Se requiere printwitness/1, secciones con contenido e ID únicos.',
+    'Manifiesto no válido. Se requiere printwitness/1, expectativas válidas e ID únicos.',
+  errorPagination:
+    'Manifiesto no válido. Indica un número de páginas o páginas de encabezados sin contradicciones. Usa números enteros positivos.',
   errorOptions: 'Opciones de origen no válidas. El límite debe ser de 100 a 60000 ms.',
   errorLocalOnly: 'Solo se admiten archivos HTML locales y URL HTTP(S) de loopback.',
   errorHtmlFile: 'Elige un archivo .html o .htm.',

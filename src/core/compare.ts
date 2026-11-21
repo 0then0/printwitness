@@ -1,4 +1,5 @@
 import { normalize } from './normalize.ts';
+import { paginationFindings } from './pagination.ts';
 import type {
   Box,
   Evidence,
@@ -50,6 +51,9 @@ const coversLabel = (link: PdfLink, evidence: Evidence[], boxes = [link.box]) =>
   );
 const overlaps = (a: Box, b: Box) =>
   a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+const closeOnLine = (a: Box, b: Box) =>
+  Math.max(a.x - b.x - b.width, b.x - a.x - a.width) <=
+  Math.max(labelPadding, 0.5 * Math.max(a.height, b.height));
 const isSingleLabel = (items: Evidence[]) =>
   items.every((item, i) => {
     const { box } = item;
@@ -59,9 +63,7 @@ const isSingleLabel = (items: Evidence[]) =>
       box.height > 0 &&
       item.page === items[0].page &&
       Math.abs(box.y - items[0].box.y) < labelPadding &&
-      (!previous ||
-        Math.max(box.x - previous.x - previous.width, previous.x - box.x - box.width) <=
-          Math.max(labelPadding, 0.5 * Math.max(box.height, previous.height)))
+      (!previous || closeOnLine(box, previous))
     );
   });
 
@@ -181,15 +183,28 @@ export function compare(
   };
   const pendingLinks: { f: Finding; target: InternalTarget; localized: boolean }[] = [];
   const tocLabels = new Map<number, number>();
-  const locatedHeadings = new Map<string, HeadingHit[]>();
-  const locateHeading = (heading: string): HeadingHit[] => {
+  const linkHeadings = new Map<string, HeadingHit[]>();
+  const paginationHeadings = new Map<string, HeadingHit[]>();
+  const locateHeading = (
+    heading: string,
+    purpose: 'link' | 'pagination' = 'link',
+  ): HeadingHit[] => {
     const key = normalize(heading);
+    const forPagination = purpose === 'pagination';
+    const locatedHeadings = forPagination ? paginationHeadings : linkHeadings;
     const cached = locatedHeadings.get(key);
     if (cached) return cached;
     const hits: HeadingHit[] = [];
-    for (const match of findAnchor(key)) {
-      // A uniquely located TOC label cannot also stand in for a separate heading.
-      if (tocLabels.get(match.start) === match.end) continue;
+    // Check line boundaries without undoing the matcher's wrap normalization.
+    // A known TOC label is ignored only when locating a link target.
+    const matches = forPagination
+      ? find(key).filter(
+          ({ start, end }) =>
+            (start === 0 || text[start - 1] === '\n') &&
+            (end === text.length || text[end] === '\n'),
+        )
+      : findAnchor(key).filter((match) => tocLabels.get(match.start) !== match.end);
+    for (const match of matches) {
       const items = evidence(match);
       const first = items[0];
       if (!first || !wholeItems(match)) continue;
@@ -199,6 +214,8 @@ export function compare(
           const previous = items[i - 1];
           if (!previous) return true;
           const offset = e.box.y - previous.box.y;
+          if (forPagination && Math.abs(offset) < labelPadding)
+            return closeOnLine(e.box, previous.box);
           return offset >= -2 && offset <= 1.5 * Math.max(e.box.height, previous.box.height);
         })
       )
@@ -560,6 +577,44 @@ export function compare(
     }
   }
   for (const { f, target, localized } of pendingLinks) checkInternalLink(f, target, localized);
+
+  const incompleteText =
+    !!manifest.pagination?.headings?.length &&
+    (pdf.pages.length !== pdf.pageCount || pdf.pages.some((page) => !normalize(page.text)));
+  for (const f of paginationFindings(manifest)) {
+    findings.push(f);
+    if (pdf.pageCount === undefined) {
+      f.reason = pdf.error ?? 'The PDF could not be opened to check pagination.';
+      continue;
+    }
+    if (f.kind === 'page-count') {
+      f.actualPageCount = pdf.pageCount;
+      const matches = f.actualPageCount === f.expectedPageCount;
+      f.status = matches ? 'found' : 'mismatch';
+      f.reason = matches
+        ? 'The PDF has the expected number of pages.'
+        : 'The PDF page count differs from the expectation.';
+      continue;
+    }
+    const hits = locateHeading(f.expected, 'pagination');
+    f.evidence = hits.flatMap((hit) => hit.evidence);
+    f.actualPages = [...new Set(hits.map((hit) => hit.first.page))].sort((a, b) => a - b);
+    f.status = 'manual';
+    if (hits.length > 1) {
+      f.reason = 'The heading has multiple matches in the PDF text layer.';
+    } else if (pdf.error || incompleteText) {
+      f.reason =
+        pdf.error ?? 'Some PDF pages lack usable extracted text. Inspect the heading manually.';
+    } else if (!hits.length) {
+      f.reason = 'The heading could not be located in the PDF text layer.';
+    } else {
+      const matches = hits[0].first.page === f.expectedPage;
+      f.status = matches ? 'found' : 'mismatch';
+      f.reason = matches
+        ? 'The heading is on the expected PDF page.'
+        : 'The heading is on a different PDF page from the expectation.';
+    }
+  }
   const active = findings.filter((f) => !f.excluded);
   const status: Status = active.some((f) => f.status === 'mismatch')
     ? 'mismatch'
@@ -574,7 +629,7 @@ export function compare(
     schema: 'printwitness-report/1',
     createdAt: new Date().toISOString(),
     manifest,
-    pdf: { ...identity, pages: pdf.pages },
+    pdf: { ...identity, pageCount: pdf.pageCount, pages: pdf.pages },
     status,
     findings,
     warnings: [

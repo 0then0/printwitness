@@ -173,7 +173,43 @@ test('check resolves internal link actions and still accepts a legacy URL manife
   assert.equal(old.status, exitCodes.passed, old.stderr);
   const legacyReport = JSON.parse(old.stdout) as Report;
   assert.deepEqual(legacyReport.manifest, legacy);
+  assert.deepEqual(
+    legacyReport.findings.map((f) => f.kind),
+    ['link'],
+  );
   assert.equal(legacyReport.findings[0].actualHref, external.href);
+});
+
+test('a page count alone is checked on textless PDFs and stays unknown on unreadable PDFs', async (t) => {
+  const w = await workspace(t);
+  await put(w, 'count.json', { ...base, sections: [], pagination: { pageCount: 1 } });
+  for (const [input, status, exit, pages] of [
+    ['textless', 'found', exitCodes.passed, 1],
+    ['corrupt', 'unverifiable', exitCodes.incomplete, null],
+  ] as const) {
+    const result = run(w, check('count.json', `${input}.pdf`, input, '--json'));
+    assert.equal(result.status, exit, result.stderr);
+    const report = JSON.parse(result.stdout) as Report;
+    assert.equal(report.status, status);
+    assert.equal(report.findings.length, 1);
+    const [count] = report.findings;
+    assert.equal(count.kind, 'page-count');
+    assert.equal(count.expectedPageCount, 1);
+    assert.equal(count.actualPageCount, pages);
+  }
+});
+
+test('an invalid pagination contract is rejected before reading the PDF', async (t) => {
+  const w = await workspace(t);
+  await put(w, 'invalid.json', {
+    ...base,
+    pagination: { pageCount: 1, headings: [{ text: 'Release approval', page: 2 }] },
+  });
+  const result = run(w, check('invalid.json', 'absent.pdf', 'out', '--json'));
+  assert.equal(result.status, exitCodes.error);
+  assert.match(result.stderr, /error\[manifest-invalid\].*pagination/);
+  assert.equal(result.stdout, '');
+  assert(!(await readdir(w.dir)).includes('out'));
 });
 
 test('a valid PDF and manifest pass with JSON and HTML evidence from one run', async (t) => {
@@ -394,6 +430,33 @@ test('unavailable PDF.js resources are reported as incomplete, never as success'
   const report = await readReport(w.file(`out/${reportFiles.json}`));
   assert.equal(report.status, 'unverifiable');
   assert(report.findings.every((f) => /Processing is incomplete/.test(f.reason)));
+});
+
+test('a PDF.js extraction fault leaves the page count verdict independent of heading review', async (t) => {
+  const w = await workspace(t);
+  await put(w, 'pagination.json', {
+    ...base,
+    sections: [],
+    pagination: { pageCount: 2, headings: [{ text: '日本語', page: 1 }] },
+  });
+  const result = run(
+    w,
+    check('pagination.json', 'predefined-cmap.pdf', 'out', '--json'),
+    { PW_FAULT: 'resource-missing' },
+    true,
+  );
+  assert.equal(result.status, exitCodes.mismatch, result.stderr);
+  const report = JSON.parse(result.stdout) as Report;
+  assert.equal(report.pdf.pageCount, 1);
+  assert.equal(report.pdf.pages[0]?.text, '');
+  const [count, heading] = report.findings;
+  assert.equal(count.kind, 'page-count');
+  assert.equal(count.status, 'mismatch');
+  assert.equal(count.actualPageCount, 1);
+  assert.equal(heading.kind, 'heading-page');
+  assert.equal(heading.status, 'manual');
+  assert.deepEqual(heading.actualPages, []);
+  assert.match(heading.reason, /Processing is incomplete/);
 });
 
 test('existing reports are never overwritten, even partially', async (t) => {

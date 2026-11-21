@@ -38,10 +38,10 @@ Download the manifest to reuse it independently of the source. Importing a manif
 Select a check to see its expected text, explanation, URL details and available evidence. Evidence highlights extraction-item coordinates, which can cover more than the precise matching characters. Navigate pages independently of the selection. Use the status filter and search to inspect losses or uncertain results.
 
 The four result states are:
-- **Found in text layer:** an independent occurrence exists in established section context. A link also needs a uniquely associated annotation that matches its URL or identifies the expected internal heading. Visual integrity is unproven.
-- **Mismatch:** required content is absent in established context, an independent repetition is missing, or a uniquely associated URL differs.
-- **Manual review:** section context, cell geometry, reading order or link association is ambiguous. Missing text in a PDF with an empty-text page also requires inspection.
-- **Unverifiable:** no usable text layer, unreadable or unsupported PDF, or no active expectations.
+- **Found (`found`).** An independent content occurrence exists in established section context, a link annotation identifies the expected destination, or a pagination expectation is confirmed.
+- **Mismatch.** Required content is absent in established context, a uniquely associated link destination differs, the physical page count differs, or a uniquely located heading is on a different page.
+- **Manual review.** The available evidence cannot settle a check. For example, heading text repeats or a page has no usable extracted text.
+- **Unverifiable.** The PDF could not be opened, the extraction cannot support a content check, or there are no active expectations.
 
 The overall result prioritizes mismatch, then unverifiable, then manual review, then found. An entirely excluded manifest is unverifiable.
 
@@ -65,6 +65,8 @@ In CI, a production install is enough: `npm ci --omit=dev --ignore-scripts`.
 
 Run the entry point by its path. Relative `--manifest`, `--pdf` and `--output` values resolve against your current directory, so the command works from any project. Do not wrap it in `npm run`: npm changes the working directory to the checkout.
 
+To verify fixed pagination, add `pagination.pageCount`, `pagination.headings`, or both to `expected.json` before running `check`. For a manifest that only checks pagination, use `"sections": []`. See the [field definitions and example](matching.md#pagination-expectations).
+
 ```sh
 node /path/to/PrintWitness/src/node/cli.ts check \
   --manifest expected.json \
@@ -86,7 +88,7 @@ Existing results are never replaced. If either file already exists the command s
 
 - `0`: every applicable check is **found**. Excluded expectations are listed but do not count.
 - `1`: confirmed violation. At least one finding is a **mismatch**.
-- `2`: manual review or an incomplete check. No finding is a mismatch, but at least one is **manual** or **unverifiable**, including a manifest with only excluded expectations.
+- `2`: manual review or an incomplete check. No finding is a mismatch, but at least one is **manual** or **unverifiable**, including a manifest whose only expectations are excluded.
 - `3`: invalid arguments, a missing or unreadable input, an invalid manifest, an oversized file, an existing report, a failed write or an unexpected failure. The `error[code]` on stderr names the cause: `usage`, `input-not-found`, `input-not-file`, `input-unreadable`, `input-too-large`, `manifest-invalid`, `dependency-unavailable`, `output-exists`, `output-failed` or `internal-error`.
 - `128` plus the signal number (130 for SIGINT, 143 for SIGTERM): interrupted before any report was saved.
 
@@ -94,13 +96,13 @@ The exit code follows the overall status of the report, which keeps the interfac
 
 ### Incomplete results
 
-Exit code `2` is neither a pass nor proof of lost content. Open the HTML report, read each reason and inspect the pages. A damaged or unsupported PDF, a PDF without a text layer, rotated text and a missing PDF.js resource (CMap, standard font or WASM) all produce **unverifiable** findings with the cause in `reason`; a damaged file is not reported as a mismatch. Ambiguous section boundaries, row geometry or link association produce **manual** findings. Reinstall the dependencies if a resource is unavailable. Do not treat code `2` as success by default; accept it only after someone has reviewed the report.
+When `check` exits with `2`, open the HTML report, read each reason and inspect the pages. A PDF that fails to open is **unverifiable**. Text-layer content checks can also be **unverifiable** when the text layer, supported extraction or a PDF.js runtime resource is unavailable. Heading-page checks need **manual** review when incomplete extraction prevents a confident match. A known page count is still checked and a count mismatch takes priority over an incomplete finding.
 
 ### Limits
 
-Success means that the text-layer content contract of the manifest holds in this PDF. It does not prove that text is visible, unclipped or unobscured, that glyphs look right or that the layout is correct. See the [matching reference](matching.md).
+Success confirms the manifest's content and pagination expectations against PDF data. Visibility, clipping, page appearance and print quality require visual inspection. See the [matching reference](matching.md).
 
-The limits of the interface apply: at most 25 MiB per PDF, 100 pages, 100 sections and 10,000 expectations. A manifest file may be up to 40 MiB. Size and file type are checked before a file is read into memory.
+The PDF limit is 25 MiB. Page extraction and previews cover up to 100 pages. The page count can still be checked as long as PDF.js opens the document. A manifest may be up to 40 MiB and have up to 100 sections and 10,000 expectations, including pagination. Size and file type are checked before a file is read into memory.
 
 ### Manifest ownership
 

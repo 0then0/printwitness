@@ -54,6 +54,7 @@ export const messages: Messages = {
   checking: 'PDF wird geprüft…',
   checks: 'Prüfungen',
   statusFound: 'In der Textebene gefunden',
+  statusPassed: 'Bestanden',
   statusMismatch: 'Abweichung',
   statusManual: 'Manuell prüfen',
   statusUnverifiable: 'Nicht prüfbar',
@@ -67,6 +68,13 @@ export const messages: Messages = {
   kindText: 'Text',
   kindRow: 'Tabellenzeile',
   kindLink: 'Link',
+  kindPageCount: 'Seitenanzahl',
+  kindHeadingPage: 'Seite der Überschrift',
+  pagination: 'Seitenaufteilung',
+  expectedPageCount: 'Erwartete Seitenanzahl: {count}',
+  actualPageCount: 'Tatsächliche Seitenanzahl: {count}',
+  expectedHeadingPage: 'Erwartete Seite: {page}',
+  actualHeadingPages: 'Ermittelte Seiten: {pages}',
   pageShort: 'S. {page}',
   noChecks: 'Keine passenden Prüfungen.',
   checksPlaceholder: 'Hier erscheinen erfasste Texte, Tabellenzeilen und Links.',
@@ -165,6 +173,17 @@ export const messages: Messages = {
   reasonInternalFound: 'Das interne Linkziel entspricht der erwarteten Überschrift.',
   reasonInternalWrongHeading:
     'Der interne Link verweist auf eine andere Überschrift auf derselben Seite.',
+  reasonPaginationUnavailable:
+    'Die PDF-Datei konnte zur Prüfung der Seitenaufteilung nicht geöffnet werden.',
+  reasonPageCountFound: 'Die PDF-Datei hat die erwartete Seitenanzahl.',
+  reasonPageCountMismatch: 'Die Seitenanzahl weicht von der Erwartung ab.',
+  reasonHeadingRepeated: 'Die Überschrift kommt mehrfach in der Textebene der PDF-Datei vor.',
+  reasonHeadingTextIncomplete:
+    'Für einige PDF-Seiten liegt kein verwertbarer Text vor. Prüfen Sie die Überschrift manuell.',
+  reasonHeadingMissing:
+    'Die Überschrift konnte in der Textebene der PDF-Datei nicht ermittelt werden.',
+  reasonHeadingPageFound: 'Die Überschrift steht auf der erwarteten PDF-Seite.',
+  reasonHeadingPageMismatch: 'Die Überschrift steht auf einer anderen PDF-Seite als erwartet.',
   reasonFound:
     'Ein unabhängiges Vorkommen ist in der Textebene dieses Abschnitts vorhanden. Das belegt keine Sichtbarkeit.',
   warningVisibility:
@@ -179,7 +198,9 @@ export const messages: Messages = {
     'PDF kann nicht gelesen werden. Es ist möglicherweise verschlüsselt, beschädigt oder nicht unterstützt.',
   errorPdfSize: 'PDF überschreitet 25 MiB.',
   errorManifest:
-    'Ungültiges Manifest. Erwartet werden printwitness/1, gefüllte Abschnitte und eindeutige IDs.',
+    'Ungültiges Manifest. Erwartet werden printwitness/1, gültige Erwartungen und eindeutige IDs.',
+  errorPagination:
+    'Ungültiges Manifest. Die Seitenaufteilung erfordert eine Seitenanzahl oder widerspruchsfreie Angaben zu Überschriften. Seitenangaben müssen positive ganze Zahlen sein.',
   errorOptions: 'Ungültige Quelloptionen. Zeitlimit muss 100–60000 ms betragen.',
   errorLocalOnly: 'Nur lokale HTML-Dateien und Loopback-HTTP(S)-URLs werden unterstützt.',
   errorHtmlFile: 'Eine .html- oder .htm-Datei wählen.',

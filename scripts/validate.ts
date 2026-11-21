@@ -7,6 +7,7 @@ import { reportHtml } from '../src/node/report.ts';
 import { capture, printSource, type SourceOptions, sha256 } from '../src/node/source.ts';
 import { fixtureServer } from './fixture-server.ts';
 import { validateNetwork } from './validate-network.ts';
+import { validatePagination } from './validate-pagination.ts';
 import { validateRegressions } from './validate-regressions.ts';
 
 await mkdir('artifacts/validation', { recursive: true });
@@ -106,3 +107,4 @@ try {
 }
 await validateNetwork();
 await validateRegressions();
+await validatePagination();

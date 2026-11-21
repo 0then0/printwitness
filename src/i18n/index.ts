@@ -1,4 +1,4 @@
-import type { Expectation, PdfDestination, Status } from '../core/types.ts';
+import type { Finding, PdfDestination, Status } from '../core/types.ts';
 import { messages as de } from './de.ts';
 import { en, type MessageKey, type Messages } from './en.ts';
 import { messages as es } from './es.ts';
@@ -39,15 +39,39 @@ const statusKeys: Record<Status, MessageKey> = {
   manual: 'statusManual',
   unverifiable: 'statusUnverifiable',
 };
-const kindKeys: Record<Expectation['kind'], MessageKey> = {
+const kindKeys: Record<Finding['kind'], MessageKey> = {
   text: 'kindText',
   row: 'kindRow',
   link: 'kindLink',
+  'page-count': 'kindPageCount',
+  'heading-page': 'kindHeadingPage',
 };
-export const statusLabel = (locale: Locale, status: Status) =>
-  translator(locale)(statusKeys[status]);
-export const kindLabel = (locale: Locale, kind: Expectation['kind']) =>
+export const statusLabel = (locale: Locale, status: Status, includesPageCount = false) =>
+  translator(locale)(status === 'found' && includesPageCount ? 'statusPassed' : statusKeys[status]);
+export const kindLabel = (locale: Locale, kind: Finding['kind']) =>
   translator(locale)(kindKeys[kind]);
+export const findingSection = (locale: Locale, finding: Finding) =>
+  finding.kind === 'page-count' || finding.kind === 'heading-page'
+    ? translator(locale)('pagination')
+    : finding.section;
+export function paginationLabels(locale: Locale, finding: Finding) {
+  const t = translator(locale);
+  if (finding.kind === 'page-count')
+    return {
+      expected: t('expectedPageCount', { count: finding.expectedPageCount }),
+      actual: t('actualPageCount', { count: finding.actualPageCount ?? '—' }),
+    };
+  if (finding.kind === 'heading-page') {
+    const numbers = new Intl.NumberFormat(locale);
+    const pages = new Intl.ListFormat(locale, { type: 'unit' }).format(
+      finding.actualPages.map((page) => numbers.format(page)),
+    );
+    return {
+      expected: t('expectedHeadingPage', { page: finding.expectedPage }),
+      actual: t('actualHeadingPages', { pages: pages || '—' }),
+    };
+  }
+}
 export function destinationLabel(locale: Locale, destination?: PdfDestination, href?: string) {
   const t = translator(locale);
   if (destination?.page === undefined) return href ?? t('unresolved');
@@ -103,6 +127,15 @@ export const diagnosticKeys: Record<string, MessageKey> = {
     'reasonInternalPosition',
   'The internal link destination aligns with the expected heading.': 'reasonInternalFound',
   'The internal link points to a different heading on the same page.': 'reasonInternalWrongHeading',
+  'The PDF could not be opened to check pagination.': 'reasonPaginationUnavailable',
+  'The PDF has the expected number of pages.': 'reasonPageCountFound',
+  'The PDF page count differs from the expectation.': 'reasonPageCountMismatch',
+  'The heading has multiple matches in the PDF text layer.': 'reasonHeadingRepeated',
+  'Some PDF pages lack usable extracted text. Inspect the heading manually.':
+    'reasonHeadingTextIncomplete',
+  'The heading could not be located in the PDF text layer.': 'reasonHeadingMissing',
+  'The heading is on the expected PDF page.': 'reasonHeadingPageFound',
+  'The heading is on a different PDF page from the expectation.': 'reasonHeadingPageMismatch',
   'Independent occurrence found in this section’s text layer. This does not prove visibility.':
     'reasonFound',
   'Text-layer presence does not prove visibility. Clipping, overlays and transparency are not universally detected.':
@@ -117,8 +150,10 @@ export const diagnosticKeys: Record<string, MessageKey> = {
   'PDF export timed out': 'errorPrintTimeout',
   'PDF exceeds 25 MiB.': 'errorPdfSize',
   'Invalid base64 PDF': 'errorPdfRead',
-  'Invalid manifest: expected printwitness/1 with non-empty sections and unique IDs.':
+  'Invalid manifest: expected printwitness/1 with valid expectations and unique IDs.':
     'errorManifest',
+  'Invalid manifest: pagination needs a page count or non-conflicting heading expectations with positive integer page numbers.':
+    'errorPagination',
   'Another operation is running. Wait for it to finish.': 'errorBusy',
   'Report expired or server restarted. Run the check again.': 'errorExpired',
   'v0.1 supports up to 100 PDF pages.': 'errorPageLimit',

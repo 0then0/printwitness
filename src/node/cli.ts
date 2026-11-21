@@ -229,9 +229,11 @@ function summary(report: Report, directory: string, code: number) {
   const tally = { found: 0, mismatch: 0, manual: 0, unverifiable: 0, excluded: 0 };
   for (const f of report.findings) tally[f.excluded ? 'excluded' : f.status]++;
   const open = report.findings.filter((f) => !f.excluded && f.status !== 'found');
+  const pages =
+    report.pdf.pageCount === undefined ? 'page count unavailable' : `${report.pdf.pageCount} pages`;
   const lines = [
     `PrintWitness check: ${report.status} (exit ${code})`,
-    `PDF: ${plain(report.pdf.name)} · ${report.pdf.pages.length} pages · sha256 ${report.pdf.sha256}`,
+    `PDF: ${plain(report.pdf.name)} · ${pages} · sha256 ${report.pdf.sha256}`,
     `Findings: ${tally.found} found, ${tally.mismatch} mismatch, ${tally.manual} manual, ${tally.unverifiable} unverifiable, ${tally.excluded} excluded`,
   ];
   for (const f of open.slice(0, 20))
@@ -242,7 +244,9 @@ function summary(report: Report, directory: string, code: number) {
   lines.push(
     `Reports: ${join(directory, reportFiles.json)}`,
     `         ${join(directory, reportFiles.html)}`,
-    'Text-layer check only: visibility, overlap and layout are not verified.',
+    report.manifest.pagination
+      ? 'Visual inspection is required to assess visibility and print quality.'
+      : 'Text-layer check only: visibility, overlap and layout are not verified.',
   );
   return `${lines.join('\n')}\n`;
 }
