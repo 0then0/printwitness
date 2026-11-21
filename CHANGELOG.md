@@ -4,6 +4,8 @@ Notable user-facing changes are recorded here. Release dates use UTC. Published 
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-21
+
 ### Added
 
 - Optional manifest pagination expectations for an exact physical PDF page count and selected heading locations. JSON and offline HTML reports include the expected and observed values and verdict reasons. A confirmed page count mismatch is reported even when heading checks require manual review. See the [pagination reference](docs/matching.md#pagination-expectations).
@@ -68,7 +70,8 @@ Notable user-facing changes are recorded here. Release dates use UTC. Published 
 - Seven interface languages and system, light and dark themes.
 - Standalone macOS arm64/x64, Windows x64 and Ubuntu 24.04 x64 packages with bundled Node.js and Chromium, native launchers and installer smoke tests.
 
-[Unreleased]: https://github.com/0then0/PrintWitness/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/0then0/PrintWitness/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/0then0/PrintWitness/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/0then0/PrintWitness/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/0then0/PrintWitness/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/0then0/PrintWitness/compare/v0.1.1...v0.1.2
