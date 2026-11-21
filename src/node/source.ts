@@ -1,5 +1,6 @@
-import { readFile, realpath } from 'node:fs/promises';
-import { basename, dirname, extname, resolve, sep } from 'node:path';
+import { mkdtemp, readFile, realpath, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { basename, dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Browser, Page } from 'playwright';
 import { parseManifest } from '../core/manifest.ts';
@@ -55,7 +56,7 @@ export function localUrl(value: string): URL {
 }
 async function openSource(
   options: SourceOptions,
-): Promise<{ browser: Browser; page: Page; name: string }> {
+): Promise<{ close: () => Promise<void>; page: Page; name: string }> {
   let url: string;
   let root: string | undefined;
   let origin: string | undefined;
@@ -77,11 +78,30 @@ async function openSource(
     // page scripts to read unrelated files, which routing cannot reliably isolate.
     url = `http://printwitness-source.invalid/${encodeURIComponent(basename(path))}`;
   }
-  const browser = await chromium.launch({
-    // Keep Chromium diagnostics from creating debug.log inside the installation.
-    args: ['--disable-background-networking', '--disable-component-update', '--disable-logging'],
-  });
+  // Windows Headless Shell uses file logging and shares the log handle with its child processes.
+  const logDirectory =
+    process.platform === 'win32'
+      ? await mkdtemp(join(tmpdir(), 'printwitness-chromium-'))
+      : undefined;
+  let browser: Browser | undefined;
+  const close = async () => {
+    try {
+      await browser?.close();
+    } finally {
+      if (logDirectory) await rm(logDirectory, { recursive: true, force: true, maxRetries: 3 });
+    }
+  };
   try {
+    browser = await chromium.launch({
+      args: [
+        '--disable-background-networking',
+        '--disable-component-update',
+        logDirectory ? '--enable-logging' : '--disable-logging',
+      ],
+      env: logDirectory
+        ? { ...process.env, CHROME_LOG_FILE: join(logDirectory, 'chromium.log') }
+        : undefined,
+    });
     const context = await browser.newContext({ serviceWorkers: 'block', acceptDownloads: false });
     // Init scripts run before source scripts in every frame, including srcdoc frames.
     // HTTP routing cannot intercept ICE/STUN/TURN transports.
@@ -156,15 +176,15 @@ async function openSource(
       timeout: remaining(),
     });
     await page.emulateMedia({ media: 'screen' });
-    return { browser, page, name };
+    return { close, page, name };
   } catch (e) {
-    await browser.close();
+    await close();
     throw e;
   }
 }
 
 export async function capture(options: SourceOptions): Promise<Manifest> {
-  const { browser, page, name } = await openSource(options);
+  const { close, page, name } = await openSource(options);
   try {
     const snapshot = await page.evaluate(({ selectors, exclusions }) => {
       const clean = (s: string) =>
@@ -459,12 +479,12 @@ export async function capture(options: SourceOptions): Promise<Manifest> {
       ...snapshot,
     });
   } finally {
-    await browser.close();
+    await close();
   }
 }
 
 export async function printSource(options: SourceOptions): Promise<Buffer> {
-  const { browser, page } = await openSource(options);
+  const { close, page } = await openSource(options);
   try {
     await page.emulateMedia({ media: 'print' });
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -482,6 +502,6 @@ export async function printSource(options: SourceOptions): Promise<Buffer> {
       clearTimeout(timer);
     }
   } finally {
-    await browser.close();
+    await close();
   }
 }

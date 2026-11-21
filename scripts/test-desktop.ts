@@ -69,6 +69,8 @@ await mkdir(emptyPath);
 const env: NodeJS.ProcessEnv = { ...process.env, PATH: emptyPath };
 delete env.NODE_PATH;
 delete env.NODE_OPTIONS;
+// A user-level Chromium log setting must not direct writes into the portable installation.
+if (process.platform === 'win32') env.CHROME_LOG_FILE = join(portable, 'inherited-chromium.log');
 // A foreign service on the usual port must never be treated as our running instance.
 const foreign = createServer((_req, res) => res.end('A different application'));
 await new Promise<void>((done, reject) => {
